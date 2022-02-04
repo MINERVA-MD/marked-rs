@@ -37,7 +37,9 @@ mod tests {
     fn run_specs() {
         let specs: Vec<Spec> = get_specs();
         for spec in specs.iter() {
-            // assert_eq!()
+            let parse_actual = Parser::parse_markdown(&spec.markdown);
+            let parse_expected = &spec.html;
+            assert_eq!(parse_expected, parse_expected);
         }
     }
 }
