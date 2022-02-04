@@ -11,7 +11,6 @@ macro_rules! spec_test {
             use test_case::test_case;
             use serde::{Serialize, Deserialize};
 
-
             use md4rs_src::parser::parse::Parser;
 
             #[derive(Serialize, Deserialize, Debug)]
