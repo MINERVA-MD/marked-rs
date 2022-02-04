@@ -1,0 +1,13 @@
+{
+  "name": "md4rs-src",
+  "version": "0.1.0",
+  "files": [
+    "md4rs_src_bg.wasm",
+    "md4rs_src.js",
+    "md4rs_src_bg.js",
+    "md4rs_src.d.ts"
+  ],
+  "module": "md4rs_src.js",
+  "types": "md4rs_src.d.ts",
+  "sideEffects": false
+}
