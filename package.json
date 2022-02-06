@@ -1,13 +1,10 @@
 {
-  "name": "md4rs",
+  "name": "md4rs-src",
   "version": "0.0.1",
   "description": "⚙️ A performant CommonMark and  GitHub Flavored Markdown compliant Markdown parser, written in Rust and compiled to WebAssembly.",
   "main": "index.js",
   "directories": {
     "test": "tests"
-  },
-  "scripts": {
-    "build": "wasm-pack build --target nodejs --out-dir md4rs --out-name md4rs"
   },
   "repository": {
     "type": "git",

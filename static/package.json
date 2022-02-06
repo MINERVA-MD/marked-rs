@@ -1,5 +1,5 @@
 {
-  "name": "md4rs",
+  "name": "md4rs-src",
   "version": "0.0.1",
   "description": "⚙️ A performant CommonMark and  GitHub Flavored Markdown compliant Markdown parser, written in Rust and compiled to WebAssembly.",
   "files": [
