@@ -2,8 +2,8 @@ name: Publish Package to npmjs
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+#    tags:
+#      - 'v*'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,6 +19,6 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - run: wasm-pack build --target nodejs --out-dir md4rs --out-name md4rs
-      - run: npm publish md4rs
+      - run: npm publish md4rs --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
