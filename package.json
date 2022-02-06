@@ -1,7 +1,6 @@
 {
-
   "name": "md4rs",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "description": "⚙️ A performant CommonMark and  GitHub Flavored Markdown compliant Markdown parser, written in Rust and compiled to WebAssembly.",
   "main": "index.js",
   "directories": {

@@ -19,6 +19,6 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - run: wasm-pack build --target nodejs --out-dir md4rs --out-name md4rs
-      - run: npm publish md4rs --access public
+      - run: npm publish md4rs
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
