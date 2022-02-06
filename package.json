@@ -1,6 +1,6 @@
 {
   "name": "md4rs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "⚙️ A performant CommonMark and  GitHub Flavored Markdown compliant Markdown parser, written in Rust and compiled to WebAssembly.",
   "main": "index.js",
   "directories": {
@@ -13,16 +13,19 @@
     "type": "git",
     "url": "git+https://github.com/MINERVA-MD/md4rs-src.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "cli",
+    "rust",
+    "wasm",
+    "markdown",
+    "markdown-parser",
+    "commonmark",
+    "gfm"
+  ],
+  "author": "Minerva-MD",
   "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/MINERVA-MD/md4rs-src/issues"
   },
-  "homepage": "https://github.com/MINERVA-MD/md4rs-src#readme",
-  "dependencies": {
-    "wasm-server": "^0.0.4",
-    "webpack": "^5.68.0",
-    "webpack-cli": "^4.9.2"
-  }
+  "homepage": "https://github.com/MINERVA-MD/md4rs-src#readme"
 }
