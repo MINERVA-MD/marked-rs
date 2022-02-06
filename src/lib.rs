@@ -2,6 +2,8 @@ use wasm_bindgen::prelude::*;
 
 pub mod parser;
 
+
+
 #[wasm_bindgen]
 pub fn parse(markdown: &str) -> String  {
     return parser::parse::Parser::parse(markdown);
