@@ -18,6 +18,6 @@ jobs:
 
       - run: wasm-pack build --target nodejs --out-dir md4rs --out-name md4rs
       - run: cp static/package.json md4rs
-      - run: npm publish ./md4rs
+      - run: npm publish ./md4rs --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
