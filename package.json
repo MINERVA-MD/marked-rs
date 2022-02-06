@@ -1,13 +1,13 @@
 {
-  "name": "md4rs-src",
-  "version": "1.0.0",
+  "name": "md4rs",
+  "version": "0.0.1",
   "description": "⚙️ A performant CommonMark and  GitHub Flavored Markdown compliant Markdown parser, written in Rust and compiled to WebAssembly.",
   "main": "index.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "wasm-pack build --target nodejs --out-dir md4rs --out-name md4rs"
   },
   "repository": {
     "type": "git",
@@ -15,7 +15,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/MINERVA-MD/md4rs-src/issues"
   },

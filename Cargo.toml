@@ -1,5 +1,5 @@
 [package]
-name = "md4rs-src"
+name = "md4rs"
 version = "0.1.0"
 edition = "2021"
 
