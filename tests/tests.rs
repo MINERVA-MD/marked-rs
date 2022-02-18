@@ -49,5 +49,7 @@ macro_rules! spec_test {
     };
 }
 
-spec_test!("tests/fixtures/commonmark/spec-v3.json", 0, 651);
+// spec_test!("tests/fixtures/commonmark/spec-v3.json", 0, 651);
 // spec_test!("tests/fixtures/gfm/spec-v3.json", 0, 651);
+
+
