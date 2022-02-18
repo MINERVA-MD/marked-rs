@@ -6,6 +6,66 @@ lazy_static! {
     static ref CARET: Regex = Regex::new("(^|[^\\[])\\^").unwrap();
 }
 
+pub struct Block {
+    newline: String,
+    code: String,
+    fences: String,
+    hr: String,
+    heading: String,
+    blockquote: String,
+    list: String,
+    html: String,
+    def: String,
+    table: String,
+    l_heading: String,
+    _paragraph: String,
+    text: String,
+    _label: String,
+    _title: String,
+    bullet: String,
+    list_item_start: String,
+    _tag: String,
+    _comment: String
+}
+
+pub struct Delim {
+    l_delim: String,
+    r_delim_ast: String,
+    r_delim_und: String
+}
+
+pub struct Inline {
+    escape: String,
+    autolink: String,
+    url: String,
+    tag: String,
+    link: String,
+    ref_link: String,
+    no_link: String,
+    ref_link_search: String,
+    em_strong: Delim,
+    code: String,
+    br: String,
+    del: String,
+    text: String,
+    punctuation: String,
+    block_skip: String,
+    escaped_em_st: String,
+    _comment: String,
+    _escapes: String,
+    scheme: String,
+    _email: String,
+    _attribute: String,
+    _label: String
+}
+
+pub struct Bold {
+    start: String,
+    middle: String,
+    end_ast: String,
+    end_und: String
+}
+
 pub struct Edit {
     pub regex_str: String,
     pub opt: String
@@ -28,7 +88,6 @@ impl Edit {
     pub fn get_regex(&mut self) -> Regex {
         return Regex::new(self.regex_str.as_str()).unwrap();
     }
-
 }
 
 pub fn test() {
@@ -49,7 +108,5 @@ pub fn test() {
     println!("{}", edit.regex_str);
 
     fs::write("helpers.txt", edit.regex_str).expect("Unable to write file");
-
-    // let reg = edit.get_regex();
 
 }
