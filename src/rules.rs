@@ -198,7 +198,7 @@ impl Edit {
 }
 
 
-pub fn setup() ->  Vec<&Block> {
+pub fn setup() ->  Vec<Block> {
     let mut normal_block = Block {
         newline: "^(?: *(?:\\n|$))+".to_string(),
         code: "^( {4}[^\\n]+(?:\\n(?: *(?:\\n|$))*)?)+".to_string(),
@@ -277,7 +277,7 @@ pub fn setup() ->  Vec<&Block> {
             .get_regex_str().as_str()
     );
 
-    // let mut gfm_block = normal_block.clone();
+    let mut gfm_block = normal_block.clone();
     // let mut gfm_block = Block {
     //     newline: normal_block.newline.to_string(),
     //     code: normal_block.code.to_string(),
@@ -300,65 +300,69 @@ pub fn setup() ->  Vec<&Block> {
     //     comment: normal_block.comment.to_string()
     // };
 
-    let mut block2 = Block {
-        newline: "".to_string(),
-        code: "".to_string(),
-        fences: "".to_string(),
-        hr: "".to_string(),
-        heading: "".to_string(),
-        blockquote: "".to_string(),
-        list: "".to_string(),
-        html: "".to_string(),
-        def: "".to_string(),
-        table: "".to_string(),
-        l_heading: "".to_string(),
-        paragraph: "".to_string(),
-        text: "".to_string(),
-        label: "".to_string(),
-        title: "".to_string(),
-        bullet: "".to_string(),
-        list_item_start: "".to_string(),
-        tag: "".to_string(),
-        comment: "".to_string()
-    };
+    // let mut block2 = Block {
+    //     newline: "".to_string(),
+    //     code: "".to_string(),
+    //     fences: "".to_string(),
+    //     hr: "".to_string(),
+    //     heading: "".to_string(),
+    //     blockquote: "".to_string(),
+    //     list: "".to_string(),
+    //     html: "".to_string(),
+    //     def: "".to_string(),
+    //     table: "".to_string(),
+    //     l_heading: "".to_string(),
+    //     paragraph: "".to_string(),
+    //     text: "".to_string(),
+    //     label: "".to_string(),
+    //     title: "".to_string(),
+    //     bullet: "".to_string(),
+    //     list_item_start: "".to_string(),
+    //     tag: "".to_string(),
+    //     comment: "".to_string()
+    // };
 
 
-    // gfm_block.set_grammar_regex(MDBlock::Table,
-    //                             "^ *([^\\n ].*\\|.*)\\n {0,3}(?:\\| *)?(:?-+:? *(?:\\| *:?-+:? *)*)(?:\\| *)?(?:\\n((?:(?! *\\n|hr|heading|blockquote|code|fences|list|html).*(?:\\n|$))*)\\n*|$)"
-    // );
-    //
-    // gfm_block.set_grammar_regex(
-    //     MDBlock::Table,
-    //     Edit::new(gfm_block.table.to_string(), "")
-    //         .replace("hr", gfm_block.hr.as_str())
-    //         .replace("heading", " {0,3}#{1,6} ")
-    //         .replace("blockquote", " {0,3}>")
-    //         .replace("code", " {4}[^\\n]")
-    //         .replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n")
-    //         .replace("list", " {0,3}(?:[*+-]|1[.)]) ")
-    //         .replace("html", "<\\/?(?:tag)(?: +|\\n|\\/?>)|<(?:script|pre|style|textarea|!--)")
-    //         .replace("tag", gfm_block.tag.as_str())
-    //         .get_regex_str().as_str()
-    // );
+    gfm_block.set_grammar_regex(MDBlock::Table,
+                                "^ *([^\\n ].*\\|.*)\\n {0,3}(?:\\| *)?(:?-+:? *(?:\\| *:?-+:? *)*)(?:\\| *)?(?:\\n((?:(?! *\\n|hr|heading|blockquote|code|fences|list|html).*(?:\\n|$))*)\\n*|$)"
+    );
+
+    gfm_block.set_grammar_regex(
+        MDBlock::Table,
+        Edit::new(gfm_block.table.to_string(), "")
+            .replace("hr", gfm_block.hr.as_str())
+            .replace("heading", " {0,3}#{1,6} ")
+            .replace("blockquote", " {0,3}>")
+            .replace("code", " {4}[^\\n]")
+            .replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n")
+            .replace("list", " {0,3}(?:[*+-]|1[.)]) ")
+            .replace("html", "<\\/?(?:tag)(?: +|\\n|\\/?>)|<(?:script|pre|style|textarea|!--)")
+            .replace("tag", gfm_block.tag.as_str())
+            .get_regex_str().as_str()
+    );
     //
     // gfm_block.paragraph = "".to_string();
 
     // println!("Paragraph: {}.......................................\n\n\n", gfm_block.paragraph.to_string());
 
-    // gfm_block.set_grammar_regex(
-    //     MDBlock::Paragraph,
-    //     Edit::new(gfm_block.paragraph.to_string(), "")
-    //         .replace("hr", normal_block.hr.as_str())
-    //         .replace("|lheading", "")
-    //         .replace("heading", " {0,3}#{1,6} ")
-    //         .replace("table", gfm_block.table.as_str())
-    //         .replace("blockquote", " {0,3}>")
-    //         .replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n")
-    //         .replace("list", " {0,3}(?:[*+-]|1[.)]) ")
-    //         .replace("html", "<\\/?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)")
-    //         .replace("tag", gfm_block.tag.as_str())
-    //         .get_regex_str().as_str()
-    // );
+    gfm_block.set_grammar_regex(MDBlock::Paragraph,
+                                "^([^\\n]+(?:\\n(?!hr|heading|lheading|blockquote|fences|list|html|table| +\\n)[^\\n]+)*)"
+    );
+
+    gfm_block.set_grammar_regex(
+        MDBlock::Paragraph,
+        Edit::new(gfm_block.paragraph.to_string(), "")
+            .replace("hr", normal_block.hr.as_str())
+            .replace("|lheading", "")
+            .replace("heading", " {0,3}#{1,6} ")
+            .replace("table", gfm_block.table.as_str())
+            .replace("blockquote", " {0,3}>")
+            .replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n")
+            .replace("list", " {0,3}(?:[*+-]|1[.)]) ")
+            .replace("html", "<\\/?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)")
+            .replace("tag", gfm_block.tag.as_str())
+            .get_regex_str().as_str()
+    );
 
 
 
@@ -366,7 +370,7 @@ pub fn setup() ->  Vec<&Block> {
 
 
 
-    return vec![&normal_block, &gfm_block];
+    return vec![normal_block, gfm_block];
 
 }
 

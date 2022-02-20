@@ -57,7 +57,7 @@ mod tests {
         let block = &setup()[1];
         let specs = get_specs("tests/fixtures/marked-regex/gfm-block.json");
 
-        // println!("{}\n\n", block.paragraph.to_string());
+        println!("{}\n\n", block.paragraph.to_string());
 
         assert_eq!(block.newline.as_str(), specs.newline.as_str());
         assert_eq!(block.code.as_str(), specs.code.as_str());
@@ -70,7 +70,7 @@ mod tests {
         assert_eq!(block.def.as_str(), specs.def.as_str());
         assert_eq!(block.table.as_str(), specs.table.as_str());
         assert_eq!(block.l_heading.as_str(), specs.l_heading.as_str());
-        // assert_eq!(block.paragraph.as_str(), specs.paragraph.as_str());
+        assert_eq!(block.paragraph.as_str(), specs.paragraph.as_str());
         assert_eq!(block.text.as_str(), specs.text.as_str());
         assert_eq!(block.label.as_str(), specs.label.as_str());
         assert_eq!(block.title.as_str(), specs.title.as_str());
