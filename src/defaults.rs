@@ -1,3 +1,3 @@
-pub struct defaults {
+pub struct Defaults {
     
 }
