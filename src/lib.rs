@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use crate::rules::setup;
+// use crate::rules::setup;
 
 pub mod parser;
 pub mod lexer;
@@ -14,7 +14,6 @@ pub fn parse(markdown: &str) -> String  {
 }
 
 pub fn run()  {
-    let blocks = setup();
     // parser::parse::Parser::parse(&"### Test");
     // parser::parse::Parser::parse(&"## Test");
     // parser::parse::Parser::parse(&"# Test");
