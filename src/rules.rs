@@ -328,12 +328,15 @@ impl Edit {
         return self.regex_str.to_string()
     }
 
-
     pub fn get_regex(&mut self) -> Regex {
         return Regex::new(self.regex_str.as_str()).unwrap();
     }
 }
 
+pub struct Rules {
+    block: Block,
+    inline: Inline
+}
 
 pub fn setup_block_rules() ->  Vec<Block> {
     let mut normal_block = Block {
@@ -805,6 +808,12 @@ pub fn setup_inline_rules() -> Vec<Inline> {
 
 pub fn test() {
 
-    let inline = &setup_inline_rules()[3];
-    fs::write("helpers.txt", inline.text.as_str()).expect("Unable to write file");
+    let str = "For more information, see chapter 3.4.5.1";
+    let re = regex::Regex::new(r#"see (chapter \d+(\.\d)*)"#).unwrap();
+    let caps = re.captures(str).unwrap();
+    let text1 = caps.get(1).map_or("", |m| m.as_str());
+
+    println!("{:?}", text1);
+    // let inline = &setup_inline_rules()[3];
+    // fs::write("helpers.txt", inline.text.as_str()).expect("Unable to write file");
 }

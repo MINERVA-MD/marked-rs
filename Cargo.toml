@@ -17,8 +17,9 @@ harness = false
 
 
 [dependencies]
-
+rand = "0.8.5"
 regex = "1.5.4"
+queues = "1.1.0"
 seq-macro = "0.3"
 gnuplot = "0.0.37"
 test-case = "1.2.1"

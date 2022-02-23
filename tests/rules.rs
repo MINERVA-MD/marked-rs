@@ -11,6 +11,7 @@ use md4rs_src::rules::{Block, MDBlock};
 
 #[cfg(test)]
 mod tests {
+    use md4rs_src::lexer::mangle;
     use md4rs_src::rules::{Inline, setup_block_rules, setup_inline_rules};
     use super::*;
 
@@ -291,5 +292,4 @@ mod tests {
         assert_eq!(inline.extended_email.as_str(), specs.extended_email.as_str());
         assert_eq!(inline.backpedal.as_str(), specs.backpedal.as_str());
     }
-
 }

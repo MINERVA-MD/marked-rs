@@ -6,6 +6,7 @@ pub mod lexer;
 pub mod helpers;
 pub mod defaults;
 pub mod rules;
+pub mod tokenizer;
 
 
 #[wasm_bindgen]
