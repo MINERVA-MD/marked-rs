@@ -3,6 +3,7 @@ use onig::*;
 use std::borrow::{Cow};
 use lazy_static::lazy_static;
 use regex::{Captures, Regex};
+use crate::lexer::regx;
 
 
 lazy_static! {
@@ -60,23 +61,51 @@ fn get_unescaped_html(html: &str) -> Cow<str> {
     });
 }
 
-pub fn escape(html: &str, encode: bool) -> Cow<str> {
+pub fn escape(html: &str, encode: bool) -> String {
     if encode {
         if ESCAPE_TEST.is_match(html) {
-            return get_escaped_html(html);
+            return get_escaped_html(html).to_string();
         }
     } else {
         if ESCAPE_TEST_NO_ENCODE.is_match(html) {
-            return get_unescaped_html(html);
+            return get_unescaped_html(html).to_string();
         }
     }
 
-    return Cow::Borrowed(html);
+    return html.to_string();
 }
 
 pub fn unescape(html: &str) -> Cow<str> {
     return UNESCAPE_TEST.replace_all(html, |cap: &Captures| {
         match_unescapes(cap)
     });
+}
+
+pub fn clean_url(sanitize: bool, base: &str, href: &str) -> String {
+    todo!()
+}
+
+pub fn split_cells(table_row: &str, count: i32) -> String {
+    todo!()
+}
+
+pub fn resolve_url(base: &str, href: &str) -> String {
+    todo!()
+}
+
+pub fn rtrim(_str: &str, c: &str, invert: bool) -> String {
+    todo!()
+}
+
+pub fn find_closing_bracket(_str: &str, b: &str) -> i32 {
+    todo!()
+}
+
+pub fn repeat_string(pattern: &str, count: i32) -> String {
+    todo!()
+}
+
+pub fn check_sanitize_deprecation(opt: &str) {
+    todo!()
 }
 

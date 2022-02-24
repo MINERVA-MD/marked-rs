@@ -1,10 +1,11 @@
 use std::fs;
-use onig::*;
+use regex::{Captures, Regex};
+use crate::lexer::regx;
 use std::borrow::Borrow;
 use serde_json::to_string;
 use lazy_static::lazy_static;
-use serde::{Serialize, Deserialize};
 use crate::rules::MDInline::Strong;
+use serde::{Serialize, Deserialize};
 
 lazy_static! {
     static ref CARET: regex::Regex = regex::Regex::new("(^|[^\\[])\\^").unwrap();
@@ -175,7 +176,7 @@ impl Block {
         }
     }
 
-    pub fn get_grammar_regex(&self, rule: MDBlock) -> Regex {
+    pub fn get_grammar_regex(&self, rule: MDBlock, opt: Option<&str>) -> Regex {
         match rule {
             MDBlock::Newline        => Regex::new(self.newline.as_str()).unwrap(),
             MDBlock::Code           => Regex::new(self.code.as_str()).unwrap(),
@@ -197,6 +198,10 @@ impl Block {
             MDBlock::Tag            => Regex::new(self.tag.as_str()).unwrap(),
             MDBlock::Comment        => Regex::new(self.comment.as_str()).unwrap(),
         }
+    }
+
+    pub fn exec<'a>(&self, src: &'a str, rule: MDBlock) -> Option<Captures<'a>> {
+        self.get_grammar_regex(rule, None).captures(src)
     }
 }
 
@@ -250,6 +255,7 @@ impl Inline {
             MDInline::ExtendedEmail     => { self.extended_email = regex_str.to_string(); }
             MDInline::Backpedal     => { self.backpedal = regex_str.to_string(); }
         }
+
     }
 
     pub fn get_grammar_regex(&self, rule: MDInline, opt: Option<&str>) -> Regex {
@@ -296,6 +302,11 @@ impl Inline {
             MDInline::Backpedal             => Regex::new(self.backpedal.as_str()).unwrap()
         }
     }
+
+    // pub fn exec(&self, src: String, rule: MDInline) -> Option<Captures> {
+    //     // self.get_grammar_regex(rule, None).captures(src)
+    //     None
+    // }
 }
 
 impl Edit {
@@ -334,8 +345,8 @@ impl Edit {
 }
 
 pub struct Rules {
-    block: Block,
-    inline: Inline
+    pub block: Block,
+    pub inline: Inline
 }
 
 pub fn setup_block_rules() ->  Vec<Block> {
@@ -807,13 +818,10 @@ pub fn setup_inline_rules() -> Vec<Inline> {
 }
 
 pub fn test() {
-
-    let str = "For more information, see chapter 3.4.5.1";
-    let re = regex::Regex::new(r#"see (chapter \d+(\.\d)*)"#).unwrap();
-    let caps = re.captures(str).unwrap();
-    let text1 = caps.get(1).map_or("", |m| m.as_str());
-
-    println!("{:?}", text1);
+    // let info_str = "html=====   ";
+    // let lang_caps = regx(r#"\S*"#).captures(info_str).unwrap();
+    // let lang = lang_caps.get(0).map_or("", |m| m.as_str());
+    // println!("{:?}", lang);
     // let inline = &setup_inline_rules()[3];
     // fs::write("helpers.txt", inline.text.as_str()).expect("Unable to write file");
 }

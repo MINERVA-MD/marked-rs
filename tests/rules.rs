@@ -35,6 +35,8 @@ mod tests {
 
     #[test]
     fn validate_normal_block_rules() {
+        test();
+
         let block = &setup_block_rules()[0];
         let specs = get_block_specs("tests/fixtures/marked-regex/block/normal-block.json");
 
@@ -61,7 +63,6 @@ mod tests {
 
     #[test]
     fn validate_gfm_block_rules() {
-        test();
         let block = &setup_block_rules()[1];
         let specs = get_block_specs("tests/fixtures/marked-regex/block/gfm-block.json");
 
@@ -88,7 +89,6 @@ mod tests {
 
     #[test]
     fn validate_pedantic_block_rules() {
-        test();
         let block = &setup_block_rules()[2];
         let specs = get_block_specs("tests/fixtures/marked-regex/block/pedantic-block.json");
 
