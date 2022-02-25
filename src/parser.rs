@@ -112,7 +112,7 @@ impl IParser for Parser {
                     body = "".to_string();
 
                     for j in 0..l2 {
-                        item = token.items.get(j).unwrap().as_str();
+                        // item = token.items.get(j).unwrap().as_str();
                     }
                     continue;
                 }
@@ -262,7 +262,7 @@ impl IParser for Parser {
         out
     }
 
-    fn parse_inline_tr(&mut self, tokens:  &mut Vec<Token>, renderer: TextRenderer) -> String {
+    fn parse_inline_tr(&mut self, mut tokens:  &mut Vec<Token>, renderer: TextRenderer) -> String {
         todo!()
     }
 }

@@ -19,7 +19,7 @@ pub struct Token {
     pub start: u32,
     pub lang: String,
     pub loose: bool,
-    pub items: Vec<String>,
+    pub items: Vec<Token>,
     pub depth: usize,
     pub escaped: bool,
     

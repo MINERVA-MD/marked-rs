@@ -1,4 +1,5 @@
 use crate::renderer::Renderer;
+use crate::tokenizer::Token;
 
 #[derive(Clone)]
 pub struct Options {
@@ -18,7 +19,7 @@ pub struct Options {
     pub smartypants: bool,
     pub is_highlight: bool,
     pub tokenizer: Option<&'static str>,
-    pub walk_tokens: Option<&'static str>,
+    pub walk_tokens: Option<fn(tokens: &mut Token)>,
     pub xhtml: bool
 }
 
@@ -63,8 +64,8 @@ impl Options {
             smartypants: false,
             tokenizer: None,
             is_highlight: false,
-            walk_tokens: None,
-            xhtml: false
+            xhtml: false,
+            walk_tokens: None
         }
     }
 
@@ -82,3 +83,4 @@ impl Options {
 impl Copy for Options {
 
 }
+
