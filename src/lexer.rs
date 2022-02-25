@@ -3,7 +3,7 @@ use rand::Rng;
 use queues::*;
 use regex::Regex;
 use crate::rules::Rules;
-use crate::defaults::Defaults;
+use crate::defaults::Options;
 use crate::tokenizer::{ITokenizer, Token, Tokenizer};
 
 
@@ -17,7 +17,7 @@ pub struct Lexer {
     pub links: Vec<String>,
     pub tokens: Vec<Token>,
     pub token_links: Vec<&'static str>,
-    pub options: Defaults,
+    pub options: Options,
     pub tokenizer: Tokenizer,
     pub inline_queue: Vec<InlineToken>,
     pub state: State
@@ -33,8 +33,8 @@ pub trait ILexer {
     fn _lex(&mut self, src: &str);
     fn block_tokens(&mut self, src: &str, tokens: Vec<Token>) -> Vec<Token>;
     fn inline_tokens(&mut self, src: &str, tokens: Vec<Token>) -> Vec<Token>;
-    fn lex(&mut self, src: &str, options: Defaults);
-    fn lex_inline(&mut self, src: &str, options: Defaults) -> Vec<Token>;
+    fn lex(&mut self, src: &str, options: Options);
+    fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Token>;
     fn check_extensions_block(&mut self, extensions_block: Option<&'static str>) -> bool;
     fn inline(&mut self, src: String, tokens: Vec<Token>);
     fn check_extensions_inline(&mut self, extensions_block: Option<&'static str>) -> bool;
@@ -42,7 +42,7 @@ pub trait ILexer {
 
 
 impl Lexer {
-    pub fn new(options: Defaults) -> Self  {
+    pub fn new(options: Options) -> Self  {
         Self {
             links: vec![],
             tokens: vec![],
@@ -528,13 +528,13 @@ impl ILexer for Lexer {
         return tokens;
     }
 
-    fn lex(&mut self, src: &str, options: Defaults) {
+    fn lex(&mut self, src: &str, options: Options) {
         let mut lexer = Lexer::new(options);
         lexer._lex(src);
     }
 
 
-    fn lex_inline(&mut self, src: &str, options: Defaults) -> Vec<Token> {
+    fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Token> {
         let mut lexer = Lexer::new(options);
         return lexer.inline_tokens(src, vec![]);
     }

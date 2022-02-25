@@ -75,10 +75,10 @@ pub fn escape(html: &str, encode: bool) -> String {
     return html.to_string();
 }
 
-pub fn unescape(html: &str) -> Cow<str> {
+pub fn unescape(html: &str) -> String {
     return UNESCAPE_TEST.replace_all(html, |cap: &Captures| {
         match_unescapes(cap)
-    });
+    }).to_string();
 }
 
 pub fn clean_url(sanitize: bool, base: &str, href: &str) -> String {

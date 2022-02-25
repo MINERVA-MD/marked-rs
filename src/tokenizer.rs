@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use regex::{Captures, Regex};
 use crate::rules::{MDBlock, Rules};
-use crate::defaults::Defaults;
+use crate::defaults::Options;
 use crate::helpers::{escape};
 use crate::lexer::{ILexer, InlineToken, Lexer, regx};
 
@@ -15,8 +15,15 @@ pub struct Token {
     pub text: String,
     pub tokens: Vec<Token>,
     pub tag: usize,
+    pub ordered: String,
+    pub start: u32,
     pub lang: String,
+    pub loose: bool,
+    pub items: Vec<String>,
     pub depth: usize,
+    pub escaped: bool,
+    
+    pub header: Vec<Token>,
     pub code_block_style: String
 }
 
@@ -37,8 +44,14 @@ impl Token {
             text: "".to_string(),
             tokens: vec![],
             tag: 0,
+            ordered: "".to_string(),
+            start: 0,
             lang: "".to_string(),
+            loose: false,
+            items: vec![],
             depth: 0,
+            escaped: false,
+            header: vec![],
             code_block_style: "".to_string()
         }
     }
@@ -83,17 +96,17 @@ pub trait ITokenizer {
 }
 
 pub struct Tokenizer {
-    pub options: Defaults,
+    pub options: Options,
     pub rules: Option<Rules>,
     pub lexer: Box<Lexer>
 }
 
 impl Tokenizer {
-    pub fn new(options: Option<Defaults>) -> Self {
+    pub fn new(options: Option<Options>) -> Self {
         Self {
             options: options.unwrap(),
             rules: None,
-            lexer: Box::from(Lexer::new(Defaults {
+            lexer: Box::from(Lexer::new(Options {
                 base_url: "",
                 breaks: false,
                 extensions: None,
@@ -103,7 +116,6 @@ impl Tokenizer {
                 lang_prefix: "",
                 mangle: false,
                 pedantic: false,
-                renderer: None,
                 sanitize: false,
                 sanitizer: None,
                 silent: false,
@@ -140,8 +152,14 @@ impl ITokenizer for Tokenizer {
                     text: "".to_string(),
                     tokens: vec![],
                     tag: 0,
+                    ordered: "".to_string(),
+                    start: 0,
                     lang: "".to_string(),
+                    loose: false,
+                    items: vec![],
                     depth: 0,
+                    escaped: false,
+                    header: vec![],
                     code_block_style: "".to_string()
                 });
             }
@@ -167,8 +185,14 @@ impl ITokenizer for Tokenizer {
                 text,
                 tokens: vec![],
                 tag: 0,
+                ordered: "".to_string(),
+                start: 0,
                 lang: "".to_string(),
+                loose: false,
+                items: vec![],
                 depth: 0,
+                escaped: false,
+                header: vec![],
                 code_block_style: "indented".to_string()
             });
         }
@@ -199,8 +223,14 @@ impl ITokenizer for Tokenizer {
                 text,
                 tokens: vec![],
                 tag: 0,
+                ordered: "".to_string(),
+                start: 0,
                 lang,
+                loose: false,
+                items: vec![],
                 depth: 0,
+                escaped: false,
+                header: vec![],
                 code_block_style: "".to_string()
             });
         }
@@ -235,8 +265,14 @@ impl ITokenizer for Tokenizer {
                 text: text.to_string(),
                 tokens: vec![],
                 tag: 0,
+                ordered: "".to_string(),
+                start: 0,
                 lang: "".to_string(),
+                loose: false,
+                items: vec![],
                 depth,
+                escaped: false,
+                header: vec![],
                 code_block_style: "".to_string()
             };
 
@@ -262,8 +298,14 @@ impl ITokenizer for Tokenizer {
                 text: "".to_string(),
                 tokens: vec![],
                 tag: 0,
+                ordered: "".to_string(),
+                start: 0,
                 lang: "".to_string(),
+                loose: false,
+                items: vec![],
                 depth: 0,
+                escaped: false,
+                header: vec![],
                 code_block_style: "".to_string()
             })
         }
@@ -287,8 +329,14 @@ impl ITokenizer for Tokenizer {
                 text,
                 tokens,
                 tag: 0,
+                ordered: "".to_string(),
+                start: 0,
                 lang: "".to_string(),
+                loose: false,
+                items: vec![],
                 depth: 0,
+                escaped: false,
+                header: vec![],
                 code_block_style: "".to_string()
             })
         }
@@ -380,8 +428,14 @@ pub fn output_link(cap: Vec<String>, link: Link, raw: String, mut lexer: Lexer) 
             text: text.to_string(),
             tokens: lexer.inline_tokens(text.to_string().as_str(), vec![]),
             tag: 0,
+            ordered: "".to_string(),
+            start: 0,
             lang: "".to_string(),
+            loose: false,
+            items: vec![],
             depth: 0,
+            escaped: false,
+            header: vec![],
             code_block_style: "".to_string()
         };
         lexer.state.in_link = false;
@@ -395,8 +449,14 @@ pub fn output_link(cap: Vec<String>, link: Link, raw: String, mut lexer: Lexer) 
             text: escape(text.to_string().as_str(), false).to_string(),
             tokens: vec![],
             tag: 0,
+            ordered: "".to_string(),
+            start: 0,
             lang: "".to_string(),
+            loose: false,
+            items: vec![],
             depth: 0,
+            escaped: false,
+            header: vec![],
             code_block_style: "".to_string()
         }
     }

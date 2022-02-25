@@ -1,22 +1,39 @@
-use crate::defaults::Defaults;
-use crate::helpers::{clean_url, escape};
 use crate::lexer::regx;
 use crate::slugger::Slugger;
+use crate::defaults::Options;
+use crate::helpers::{clean_url, escape};
 
 pub struct Renderer {
-    options: Defaults
+    options: Options
 }
+
+impl Renderer {
+    pub fn new(options: Options) -> Self {
+        Self {
+            options
+        }
+    }
+}
+
+impl Clone for Renderer {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl Copy for Renderer {}
 
 pub struct Flags {
     header: &'static str,
     align: &'static str
 }
 
-trait IRenderer {
+
+pub trait IRenderer {
     fn code(&mut self, code: &str, info_str: &str, escaped: bool) -> String;
     fn blockquote(&mut self, quote: &str) -> String;
     fn html(&mut self, html: &str) -> String;
-    fn heading(&mut self, text: &str, level: usize, raw: &str, slugger: Slugger) -> String;
+    fn heading(&mut self, text: &str, level: usize, raw: &str, slugger: &mut Slugger) -> String;
     fn hr(&mut self) -> String;
     fn list(&mut self, body: &str, ordered: bool, start: u32) -> String;
     fn list_item(&mut self, text: &str) -> String;
@@ -78,7 +95,7 @@ impl IRenderer for Renderer {
         String::from(html)
     }
 
-    fn heading(&mut self, text: &str, level: usize, raw: &str, mut slugger: Slugger) -> String {
+    fn heading(&mut self, text: &str, level: usize, raw: &str, mut slugger: &mut Slugger) -> String {
         if self.options.header_ids {
             return format!(r#"<h{} id="{}{}">{}</h{}>\n"#,
                            level,

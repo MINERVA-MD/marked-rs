@@ -1,6 +1,7 @@
+use crate::renderer::Renderer;
 
-#[derive(Clone, Copy)]
-pub struct Defaults {
+#[derive(Clone)]
+pub struct Options {
     pub base_url: &'static str,
     pub breaks: bool,
     pub extensions: Option<&'static str>,
@@ -10,7 +11,6 @@ pub struct Defaults {
     pub lang_prefix: &'static str,
     pub mangle: bool,
     pub pedantic: bool,
-    pub renderer: Option<&'static str>,
     pub sanitize: bool,
     pub sanitizer: Option<&'static str>,
     pub silent: bool,
@@ -44,8 +44,8 @@ pub enum Default {
     Xhtml
 }
 
-impl Defaults {
-    pub fn new() -> Self {
+impl Options {
+    pub fn new(&self) -> Self {
         Self {
             base_url: "",
             breaks: false,
@@ -56,7 +56,6 @@ impl Defaults {
             lang_prefix: "language-",
             mangle: true,
             pedantic: false,
-            renderer: None,
             sanitize: false,
             sanitizer: None,
             silent: false,
@@ -69,12 +68,17 @@ impl Defaults {
         }
     }
 
+
     pub fn highlight(&mut self, code: &str, lang: &str) -> String {
         "".to_string()
     }
 
-    pub fn change_defaults(mut self, new_defaults: Defaults) {
+    pub fn change_defaults(mut self, new_defaults: Options) {
         self = new_defaults;
     }
+
+}
+
+impl Copy for Options {
 
 }
