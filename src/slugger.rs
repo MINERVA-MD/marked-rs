@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use crate::lexer::regx;
 use std::collections::HashMap;
 

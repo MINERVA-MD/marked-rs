@@ -1,10 +1,8 @@
-use std::panic;
-use crate::lexer::{ILexer, Lexer};
-use crate::parser::{IParser, Parser};
 use crate::slugger::Slugger;
 use crate::defaults::Options;
-use crate::helpers::escape;
 use crate::renderer::Renderer;
+use crate::lexer::{ILexer, Lexer};
+use crate::parser::{IParser, Parser};
 use crate::text_renderer::TextRenderer;
 use crate::tokenizer::{Token, Tokenizer};
 

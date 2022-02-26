@@ -1,5 +1,5 @@
 {
-  "name": "md4rs",
+  "name": "marked-rs",
   "version": "0.1.0",
   "description": "⚙️ A performant CommonMark and  GitHub Flavored Markdown compliant Markdown parser, written in Rust and compiled to WebAssembly.",
   "main": "index.js",
@@ -22,7 +22,7 @@
   "author": "Minerva-MD",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/MINERVA-MD/md4rs-src/issues"
+    "url": "https://github.com/MINERVA-MD/marked-rs/issues"
   },
-  "homepage": "https://github.com/MINERVA-MD/md4rs-src#readme"
+  "homepage": "https://github.com/MINERVA-MD/marked-rs#readme"
 }

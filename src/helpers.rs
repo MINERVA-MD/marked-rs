@@ -1,10 +1,7 @@
 // Helpers
-use onig::*;
 use std::borrow::{Cow};
 use lazy_static::lazy_static;
 use regex::{Captures, Regex};
-use crate::lexer::regx;
-
 
 lazy_static! {
     static ref ESCAPE_TEST: Regex = Regex::new("[&<>\"']").unwrap();

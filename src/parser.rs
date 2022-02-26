@@ -1,11 +1,11 @@
-use std::borrow::Borrow;
-use std::fmt::format;
+use crate::tokenizer::Token;
 use crate::slugger::Slugger;
 use crate::defaults::Options;
 use crate::helpers::unescape;
-use crate::renderer::{IRenderer, Renderer};
 use crate::text_renderer::TextRenderer;
-use crate::tokenizer::Token;
+use crate::renderer::{IRenderer, Renderer};
+
+
 
 pub struct Parser {
     pub options: Options,

@@ -1,10 +1,7 @@
-use std::fs;
-use regex::{Captures, Regex};
-use crate::lexer::regx;
-use std::borrow::Borrow;
-use serde_json::to_string;
+// use std::fs;
+use onig::{Captures, Regex};
+// use regex::{Captures, Regex};
 use lazy_static::lazy_static;
-use crate::rules::MDInline::Strong;
 use serde::{Serialize, Deserialize};
 
 lazy_static! {
@@ -350,6 +347,8 @@ pub struct Rules {
 }
 
 pub fn setup_block_rules() ->  Vec<Block> {
+
+    /* Normal MD */
     let mut normal_block = Block {
         newline: "^(?: *(?:\\n|$))+".to_string(),
         code: "^( {4}[^\\n]+(?:\\n(?: *(?:\\n|$))*)?)+".to_string(),
@@ -429,9 +428,7 @@ pub fn setup_block_rules() ->  Vec<Block> {
     );
 
 
-    /**
-     * GFM Block Grammar
-     */
+    /* GFM Block Grammar */
     let mut gfm_block = normal_block.clone();
 
     gfm_block.set_grammar_regex(MDBlock::Table,
@@ -469,9 +466,7 @@ pub fn setup_block_rules() ->  Vec<Block> {
     );
 
 
-    /**
-     * Pedantic grammar (original John Gruber's loose markdown specification)
-     */
+    /* Pedantic grammar (original John Gruber's loose markdown specification) */
     let mut pedantic_block = normal_block.clone();
 
     pedantic_block.set_grammar_regex(
@@ -511,14 +506,14 @@ pub fn setup_block_rules() ->  Vec<Block> {
             .get_regex_str().as_str()
     );
 
-    return vec![normal_block, gfm_block, pedantic_block];
+    let mut blocks = vec![normal_block, gfm_block, pedantic_block];
+
+    return blocks;
 
 }
 
 pub fn setup_inline_rules() -> Vec<Inline> {
-    /**
-     * Inline-Level Grammar
-     */
+    /* Inline-Level Grammar */
     let mut normal_inline = Inline {
         escape: r##"^\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])"##.to_string(),
         autolink: "^<(scheme:[^\\s\\x00-\\x1f<>]*|email)>".to_string(),
@@ -663,9 +658,7 @@ pub fn setup_inline_rules() -> Vec<Inline> {
     );
 
 
-    /**
-     * Pedantic Inline Grammar
-     */
+    /* Pedantic Inline Grammar */
     let mut pedantic_inline = normal_inline.clone();
 
     pedantic_inline.set_grammar_regex(
@@ -813,8 +806,85 @@ pub fn setup_inline_rules() -> Vec<Inline> {
         None
     );
 
+    let inlines = vec![normal_inline, pedantic_inline, gfm_inline, gfm_with_breaks_inline];
+    inlines
+}
 
-    return vec![normal_inline, pedantic_inline, gfm_inline, gfm_with_breaks_inline];
+
+pub fn get_default_rules() -> Rules {
+    let blocks = setup_block_rules();
+    let block = blocks.get(0).unwrap();
+    let inlines = setup_inline_rules();
+    let inline = inlines.get(0).unwrap();
+    Rules {
+        block: Block {
+            newline: block.newline.to_string(),
+            code: block.code.to_string(),
+            fences: block.fences.to_string(),
+            hr: block.hr.to_string(),
+            heading: block.heading.to_string(),
+            blockquote: block.blockquote.to_string(),
+            list: block.list.to_string(),
+            html: block.html.to_string(),
+            def: block.def.to_string(),
+            table: block.table.to_string(),
+            l_heading: block.l_heading.to_string(),
+            paragraph: block.paragraph.to_string(),
+            text: block.paragraph.to_string(),
+            label: block.label.to_string(),
+            title: block.title.to_string(),
+            bullet: block.bullet.to_string(),
+            list_item_start: block.list_item_start.to_string(),
+            tag: block.tag.to_string(),
+            comment: block.comment.to_string()
+        },
+        inline: Inline {
+            escape: inline.escape.to_string(),
+            autolink: inline.autolink.to_string(),
+            url: inline.url.to_string(),
+            tag: inline.tag.to_string(),
+            link: inline.link.to_string(),
+            ref_link: inline.ref_link.to_string(),
+            no_link: inline.no_link.to_string(),
+            ref_link_search: inline.ref_link_search.to_string(),
+            em_strong: Delim {
+                l_delim: inline.em_strong.l_delim.to_string(),
+                r_delim_ast: inline.em_strong.r_delim_ast.to_string(),
+                r_delim_und: inline.em_strong.r_delim_und.to_string()
+            },
+            code: inline.code.to_string(),
+            br: inline.br.to_string(),
+            del: inline.del.to_string(),
+            text: inline.text.to_string(),
+            punctuation: inline.punctuation.to_string(),
+            _punctuation: inline._punctuation.to_string(),
+            block_skip: inline.block_skip.to_string(),
+            escaped_em_st: inline.escaped_em_st.to_string(),
+            comment: inline.comment.to_string(),
+            escapes: inline.escapes.to_string(),
+            scheme: inline.scheme.to_string(),
+            email: inline.email.to_string(),
+            attribute: inline.attribute.to_string(),
+            label: inline.label.to_string(),
+            href: inline.href.to_string(),
+            title: inline.href.to_string(),
+            breaks: inline.breaks.to_string(),
+            strong: Bold {
+                start: inline.strong.start.to_string(),
+                middle: inline.strong.middle.to_string(),
+                end_ast: inline.strong.end_ast.to_string(),
+                end_und: inline.strong.end_und.to_string()
+            },
+            em: Bold {
+                start: inline.em.start.to_string(),
+                middle: inline.em.middle.to_string(),
+                end_ast: inline.em.end_ast.to_string(),
+                end_und: inline.em.end_und.to_string()
+            },
+            extended_email: inline.extended_email.to_string(),
+            backpedal: inline.backpedal.to_string()
+        }
+    }
 }
 
 pub fn test() {

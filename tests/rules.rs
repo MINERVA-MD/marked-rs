@@ -1,4 +1,4 @@
-use md4rs_src::rules::test;
+use marked_rs::rules::test;
 
 use std::fs;
 use std::env;
@@ -7,12 +7,12 @@ use std::path::Path;
 use serde_json::Result;
 use test_case::test_case;
 use serde::{Serialize, Deserialize};
-use md4rs_src::rules::{Block, MDBlock};
+use marked_rs::rules::{Block, MDBlock};
 
 #[cfg(test)]
 mod tests {
-    use md4rs_src::lexer::mangle;
-    use md4rs_src::rules::{Inline, setup_block_rules, setup_inline_rules};
+    use marked_rs::lexer::mangle;
+    use marked_rs::rules::{Inline, setup_block_rules, setup_inline_rules};
     use super::*;
 
     fn deserialize_specs(path: &str)-> String {

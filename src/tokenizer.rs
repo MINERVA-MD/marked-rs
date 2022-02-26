@@ -1,9 +1,9 @@
-use std::rc::Rc;
-use regex::{Captures, Regex};
-use crate::rules::{MDBlock, Rules};
+use std::fmt;
+use std::fmt::Formatter;
 use crate::defaults::Options;
 use crate::helpers::{escape};
-use crate::lexer::{ILexer, InlineToken, Lexer, regx};
+use crate::rules::{MDBlock, Rules};
+use crate::lexer::{ILexer, Lexer, regx};
 
 
 #[derive(Clone)]
@@ -65,6 +65,16 @@ impl Token {
 
 }
 
+impl fmt::Debug for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "(Tokens: {:?}, \nText: {:?} \nRaw: {:?})",
+            self.tokens.len(),
+            self.text,
+            self.raw
+        )
+    }
+}
+
 pub trait ITokenizer {
 
     // Block
@@ -97,51 +107,31 @@ pub trait ITokenizer {
 
 pub struct Tokenizer {
     pub options: Options,
-    pub rules: Option<Rules>,
-    pub lexer: Box<Lexer>
+    pub rules: Rules,
+    // pub lexer: Box<Lexer>
 }
 
 impl Tokenizer {
-    pub fn new(options: Option<Options>) -> Self {
+    pub fn new(options: Option<Options>, rules: Rules) -> Self {
         Self {
             options: options.unwrap(),
-            rules: None,
-            lexer: Box::from(Lexer::new(Options {
-                base_url: "",
-                breaks: false,
-                extensions: None,
-                gfm: false,
-                header_ids: false,
-                header_prefix: "",
-                lang_prefix: "",
-                mangle: false,
-                pedantic: false,
-                sanitize: false,
-                sanitizer: None,
-                silent: false,
-                is_highlight: false,
-                smart_lists: false,
-                smartypants: false,
-                tokenizer: None,
-                walk_tokens: None,
-                xhtml: false
-            })),
+            rules
         }
     }
 
     pub fn get_rules(self) -> Rules {
-        self.rules.unwrap()
+        self.rules
     }
 }
 
 impl ITokenizer for Tokenizer {
 
     fn space(&mut self, src: &str) -> Option<Token> {
-        let newline_caps = self.rules.as_ref().unwrap().block.exec(src, MDBlock::Newline);
+        let newline_caps = self.rules.block.exec(src, MDBlock::Newline);
 
         if newline_caps.is_some() {
             let caps = newline_caps.unwrap();
-            let _raw = caps.get(0).map_or("", |m| m.as_str());
+            let _raw = caps.at(0).map_or("", |m| m);
 
             if _raw.len() > 0 {
                 return Some (Token {
@@ -168,13 +158,13 @@ impl ITokenizer for Tokenizer {
     }
 
     fn code(&mut self, src: &str) -> Option<Token> {
-        let code_caps = self.rules.as_ref().unwrap().block.exec(src, MDBlock::Code);
+        let code_caps = self.rules.block.exec(src, MDBlock::Code);
 
         if code_caps.is_some() {
             let caps = code_caps.unwrap();
-            let _raw = caps.get(0).map_or("", |m| m.as_str());
+            let _raw = caps.at(0).map_or("", |m| m);
             let mut text = regx("(?m)^ {1,4}").replace_all(_raw, "").to_string();
-            todo!("Double check reg");
+            // todo!("Double check reg");
             text = if !self.options.pedantic { regx("\n*$").replace_all(text.as_str(), "").to_string()} else { text.to_string() };
 
             return Some(Token {
@@ -200,20 +190,20 @@ impl ITokenizer for Tokenizer {
     }
 
     fn fences(&mut self, src: &str) -> Option<Token> {
-        let fences_caps = self.rules.as_ref().unwrap().block.exec(src, MDBlock::Fences);
+        let fences_caps = self.rules.block.exec(src, MDBlock::Fences);
 
         if fences_caps.is_some() {
             let caps = fences_caps.unwrap();
-            let _raw = caps.get(0).map_or("", |m| m.as_str());
-            let cap3 = caps.get(3);
+            let _raw = caps.at(0).map_or("", |m| m);
+            let cap3 = caps.at(3);
             let mut _text: String = "".to_string();
             if cap3.is_some() {
-                _text = cap3.map_or("", |m| m.as_str()).to_string();
+                _text = cap3.map_or("", |m| m).to_string();
             }
             let text = indent_code_compensation(_raw, _text);
 
-            let cap2 = caps.get(2);
-            let lang = if cap2.is_some() { cap2.map_or("", |m| m.as_str()).trim().to_string() } else { "".to_string() };
+            let cap2 = caps.at(2);
+            let lang = if cap2.is_some() { cap2.map_or("", |m| m).trim().to_string() } else { "".to_string() };
 
             return Some(Token {
                 _type: "code",
@@ -238,11 +228,11 @@ impl ITokenizer for Tokenizer {
     }
 
     fn heading(&mut self, src: &str) -> Option<Token> {
-        let heading_caps = self.rules.as_ref().unwrap().block.exec(src, MDBlock::Heading);
+        let heading_caps = self.rules.block.exec(src, MDBlock::Heading);
 
         if heading_caps.is_some() {
             let caps = heading_caps.unwrap();
-            let mut text = caps.get(2).map_or("", |m| m.as_str()).trim().to_string();
+            let mut text = caps.at(2).map_or("", |m| m).trim().to_string();
 
             if regx("#$").is_match(text.as_str()) {
                 let trimmed = regx("#*$").replace_all(text.as_str(), "").to_string();
@@ -254,8 +244,8 @@ impl ITokenizer for Tokenizer {
                 }
             }
 
-            let _raw = caps.get(0).map_or("", |m| m.as_str());
-            let depth = caps.get(1).map_or("", |m| m.as_str()).len();
+            let _raw = caps.at(0).map_or("", |m| m);
+            let depth = caps.at(1).map_or("", |m| m).len();
 
             let mut token = Token {
                 _type: "heading",
@@ -284,12 +274,12 @@ impl ITokenizer for Tokenizer {
     }
 
     fn hr(&mut self, src: &str) -> Option<Token> {
-        let hr_caps = self.rules.as_ref().unwrap().block.exec(src, MDBlock::Hr);
+        let hr_caps = self.rules.block.exec(src, MDBlock::Hr);
 
         if hr_caps.is_some() {
             let caps = hr_caps.unwrap();
-            let raw = caps.get(0).map_or("", |m| m.as_str()).to_string();
-            
+            let raw = caps.at(0).map_or("", |m| m).to_string();
+
             return Some(Token{
                 _type: "hr",
                 raw,
@@ -313,13 +303,14 @@ impl ITokenizer for Tokenizer {
     }
 
     fn blockquote(&mut self, src: &str) -> Option<Token> {
-        let blockquote_caps = self.rules.as_ref().unwrap().block.exec(src, MDBlock::Hr);
+        let blockquote_caps = self.rules.block.exec(src, MDBlock::Hr);
 
         if blockquote_caps.is_some() {
+            let mut lexer = Lexer::new(self.options);
             let caps = blockquote_caps.unwrap();
-            let raw = caps.get(0).map_or("", |m| m.as_str());
+            let raw = caps.at(0).map_or("", |m| m);
             let text  = regx("(?m)^ *> ?").replace_all(raw, "").to_string();
-            let tokens = self.lexer.block_tokens(text.as_str(), vec![]);
+            let tokens = lexer.block_tokens(text.as_str(), vec![]);
 
             return Some(Token {
                 _type: "blockquote",
@@ -471,7 +462,7 @@ pub fn indent_code_compensation(raw: &str, text: String) -> String {
     }
 
     let match_indent_to_code = indent_to_code_caps.unwrap();
-    let indent_to_code = match_indent_to_code.get(1).map_or("", |m| m.as_str());
+    let indent_to_code = match_indent_to_code.get(1).map_or("", |m| <&str>::from(m));
 
     return text
         .split("\n")
@@ -484,7 +475,7 @@ pub fn indent_code_compensation(raw: &str, text: String) -> String {
             }
 
             let match_indent_in_node = indent_in_node_caps.unwrap();
-            let indent_in_node = match_indent_in_node.get(0).map_or("", |m| m.as_str());
+            let indent_in_node = match_indent_in_node.get(0).map_or("", |m| <&str>::from(m));
 
             if indent_in_node.len() >= indent_to_code.len() {
                 return String::from(&node[indent_to_code.len()..]);

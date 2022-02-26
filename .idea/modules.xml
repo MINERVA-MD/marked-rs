@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/md4rs-src.iml" filepath="$PROJECT_DIR$/md4rs-src.iml" />
+      <module fileurl="file://$PROJECT_DIR$/marked-rs.iml" filepath="$PROJECT_DIR$/marked-rs.iml" />
     </modules>
   </component>
 </project>

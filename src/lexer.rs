@@ -1,11 +1,9 @@
-use std::borrow::Borrow;
+use std::io::Write;
 use rand::Rng;
-use queues::*;
 use regex::Regex;
-use crate::rules::Rules;
-use crate::defaults::Options;
+use crate::defaults::{get_default_options, Options};
+use crate::rules::get_default_rules;
 use crate::tokenizer::{ITokenizer, Token, Tokenizer};
-
 
 pub struct State {
     pub in_link: bool,
@@ -30,16 +28,14 @@ pub struct InlineToken {
 }
 
 pub trait ILexer {
-    fn _lex(&mut self, src: &str);
+    fn lex(&mut self, src: &str) -> &mut Vec<Token>;
     fn block_tokens(&mut self, src: &str, tokens: Vec<Token>) -> Vec<Token>;
     fn inline_tokens(&mut self, src: &str, tokens: Vec<Token>) -> Vec<Token>;
-    fn lex(&mut self, src: &str, options: Options);
     fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Token>;
     fn check_extensions_block(&mut self, extensions_block: Option<&'static str>) -> bool;
     fn inline(&mut self, src: String, tokens: Vec<Token>);
     fn check_extensions_inline(&mut self, extensions_block: Option<&'static str>) -> bool;
 }
-
 
 impl Lexer {
     pub fn new(options: Options) -> Self  {
@@ -48,7 +44,7 @@ impl Lexer {
             tokens: vec![],
             token_links: vec![],
             options,
-            tokenizer: Tokenizer::new(Some(options)),
+            tokenizer: Tokenizer::new(Some(options), get_default_rules()),
             inline_queue: Default::default(),
             state: State {
                 in_link: false,
@@ -57,20 +53,38 @@ impl Lexer {
             }
         }
     }
+
+    pub fn _lex(src: &str, options: Options) -> Lexer  {
+        let mut lexer = Lexer::new(options);
+        lexer.lex(src);
+
+        lexer
+    }
 }
 
 impl ILexer for Lexer {
-    fn _lex(&mut self, src: &str) {
+
+    fn lex(&mut self, src: &str) -> &mut Vec<Token> {
         let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
         new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
 
-        self.block_tokens(src, vec![]);
+        let mut tokens: Vec<Token> = self.block_tokens(new_src.as_str(), vec![]);
 
-        let mut next = self.inline_queue.remove(0);
+        println!("Length: {:?}", tokens);
+
+        let mut next: InlineToken;
+
+        if self.inline_queue.len() > 0 {
+            next = self.inline_queue.remove(0);
+        } else {
+            return &mut self.tokens;
+        }
+
         while self.inline_queue.len() > 0 {
             self.inline_tokens(next.src.as_str(), vec![]);
             next = self.inline_queue.remove(0);
         }
+        &mut self.tokens
     }
 
     fn block_tokens(&mut self, src: &str, mut tokens: Vec<Token>) -> Vec<Token> {
@@ -85,6 +99,7 @@ impl ILexer for Lexer {
         let mut cut_src: String;
 
         while _src.len() > 0 {
+            println!("Current String: {} +++++++++++++++++++++++++++++++++++++", _src);
             if self.options.extensions.is_some()
             && self.check_extensions_block(self.options.extensions)
             {
@@ -308,21 +323,21 @@ impl ILexer for Lexer {
     }
 
     fn inline_tokens(&mut self, src: &str, mut tokens: Vec<Token>) -> Vec<Token> {
-        todo!();
+        // todo!();
         // Mask out reflinks
         if self.links.len() > 0 {
             todo!();
         }
 
-        todo!("Mask out other blocks");
-        todo!("Mask out escaped em & strong delimiters");
+        // todo!("Mask out other blocks");
+        // todo!("Mask out escaped em & strong delimiters");
 
         let mut _src: String = String::from(src);
-        todo!("Check this initialization");
+        // todo!("Check this initialization");
         let mut _cut_src: String = String::from("");
         let mut _masked_src: String = String::from(src);
 
-        let mut prev_char: &str = "";
+        let mut prev_char: String = "".to_string();
         let mut _match: Vec<&str>;
         let mut token: Option<Token>;
         let mut last_token: &mut Token;
@@ -331,7 +346,7 @@ impl ILexer for Lexer {
         while _src.len() > 0 {
 
             if !_keep_prev_char {
-                prev_char = "";
+                prev_char = "".to_string();
             }
             _keep_prev_char = false;
 
@@ -411,7 +426,7 @@ impl ILexer for Lexer {
 
 
             // em & strong
-            token = self.tokenizer.em_strong(src, _masked_src.as_str(), prev_char);
+            token = self.tokenizer.em_strong(src, _masked_src.as_str(), prev_char.to_string().as_str());
             if token.is_some() {
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
@@ -483,7 +498,7 @@ impl ILexer for Lexer {
             // prevent inlineText consuming extensions by clipping 'src' to extension start
             _cut_src = _src.clone();
             if self.options.extensions.is_some() {
-                todo!("Implement logic to avoid clipping src");
+                // todo!("Implement logic to avoid clipping src");
             }
 
             // Inline Text
@@ -497,7 +512,7 @@ impl ILexer for Lexer {
 
                 let last_char = _token.raw.chars().last().unwrap();
                 if last_char != '_' {
-                    prev_char = last_char.to_string().as_str();
+                    prev_char = last_char.to_string();
                 }
 
                 _keep_prev_char = true;
@@ -528,12 +543,6 @@ impl ILexer for Lexer {
         return tokens;
     }
 
-    fn lex(&mut self, src: &str, options: Options) {
-        let mut lexer = Lexer::new(options);
-        lexer._lex(src);
-    }
-
-
     fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Token> {
         let mut lexer = Lexer::new(options);
         return lexer.inline_tokens(src, vec![]);
@@ -551,7 +560,6 @@ impl ILexer for Lexer {
             }
         )
     }
-
 
     fn check_extensions_inline(&mut self, extensions_inline: Option<&'static str>) -> bool {
         return true;

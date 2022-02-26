@@ -1,4 +1,3 @@
-use crate::renderer::Renderer;
 use crate::tokenizer::Token;
 
 #[derive(Clone)]
@@ -82,5 +81,28 @@ impl Options {
 
 impl Copy for Options {
 
+}
+
+pub fn get_default_options() -> Options {
+    Options {
+        base_url: "",
+        breaks: false,
+        extensions: None,
+        gfm: false,
+        header_ids: false,
+        header_prefix: "",
+        lang_prefix: "",
+        mangle: false,
+        pedantic: false,
+        sanitize: false,
+        sanitizer: None,
+        silent: false,
+        smart_lists: false,
+        smartypants: false,
+        is_highlight: false,
+        tokenizer: None,
+        walk_tokens: None,
+        xhtml: false
+    }
 }
 
