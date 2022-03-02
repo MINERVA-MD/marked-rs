@@ -697,6 +697,7 @@ impl ITokenizer for Tokenizer {
             let raw = caps.get(0).map_or("", |m| m.as_str());
             let cap1 = caps.get(1).map_or("", |m| m.as_str());
 
+
             let mut text = "".to_string();
 
             if lexer.state.in_raw_block {
@@ -738,7 +739,6 @@ impl ITokenizer for Tokenizer {
                 header: vec![],
                 code_block_style: "".to_string()
             };
-            println!("{:?}", token);
             return Some(token);
         }
         None

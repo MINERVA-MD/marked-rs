@@ -24,7 +24,8 @@ pub struct Lexer {
 #[derive(Clone, Debug)]
 pub struct InlineToken {
     pub src: String,
-    pub tokens: Vec<Token>
+    pub tokens: Vec<Token>,
+    pub parent_block_idx: usize
 }
 
 pub trait ILexer {
@@ -33,7 +34,7 @@ pub trait ILexer {
     fn inline_tokens(&mut self, src: &str, tokens: Vec<Token>) -> Vec<Token>;
     fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Token>;
     fn check_extensions_block(&mut self, extensions_block: Option<&'static str>) -> bool;
-    fn inline(&mut self, src: String, tokens: Vec<Token>);
+    fn inline(&mut self, src: String, tokens: Vec<Token>, parent_block_idx: usize);
     fn check_extensions_inline(&mut self, extensions_block: Option<&'static str>) -> bool;
 }
 
@@ -73,11 +74,13 @@ impl ILexer for Lexer {
         let mut next: InlineToken;
 
         loop {
-            if self.inline_queue.len() > 0 {
+            if self.inline_queue.len() == 0 {
                 break;
             } else {
                 next = self.inline_queue.remove(0);
-                self.inline_tokens(next.src.as_str(), next.tokens);
+                let idx = next.parent_block_idx;
+                let tokens = self.inline_tokens(next.src.as_str(), next.tokens);
+                self.tokens.get_mut(idx).unwrap().tokens = tokens;
             }
         }
 
@@ -341,7 +344,7 @@ impl ILexer for Lexer {
             {
                 println!("Entered Paragraph Block");
                 let _token = token.unwrap();
-                self.inline(String::from(_token.text.as_str()), _token.tokens.clone());
+                self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), self.tokens.len());
 
                 let idx = _token.raw.len();
 
@@ -389,7 +392,7 @@ impl ILexer for Lexer {
                 println!("Entered Text Block");
 
                 let _token = token.unwrap();
-                self.inline(String::from(_token.text.as_str()), _token.tokens.clone());
+                self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), self.tokens.len());
 
                 let idx = _token.raw.len();
 
@@ -450,9 +453,6 @@ impl ILexer for Lexer {
         if self.links.len() > 0 {
             // todo!();
         }
-
-
-        // println!("Top: \n{:?}", tokens);
 
         // todo!("Mask out other blocks");
         // todo!("Mask out escaped em & strong delimiters");
@@ -641,7 +641,6 @@ impl ILexer for Lexer {
             token = self.tokenizer.inline_text(_cut_src.as_str(), smartypants);
             if token.is_some() {
                 println!("Entered Inline Text");
-
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -684,11 +683,6 @@ impl ILexer for Lexer {
             }
             // count += 1;
         }
-
-
-        println!("Bottom:\n{:?}", tokens);
-
-        println!("Returning tokens");
         return tokens;
     }
 
@@ -701,11 +695,12 @@ impl ILexer for Lexer {
         return true;
     }
 
-    fn inline(&mut self, src: String, tokens: Vec<Token>) {
+    fn inline(&mut self, src: String, tokens: Vec<Token>, parent_block_idx: usize) {
         self.inline_queue.push(
             InlineToken {
                 src,
-                tokens
+                tokens,
+                parent_block_idx
             }
         )
     }
