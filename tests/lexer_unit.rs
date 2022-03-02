@@ -5,10 +5,10 @@ use marked_rs::tokenizer::{Link, Token};
 
 pub fn expect_tokens(md: &str, options: Options, mut tokens: &mut Vec<Token>, links: Vec<Link>) {
     let mut lexer = Lexer::new(options);
-    // let actual_tokens = lexer.lex(md);
-    // let expected_tokens = tokens;
-    // //
-    // println!("Expected Length: {}; Actual Length: {}", expected_tokens.len(), actual_tokens.len())
+    let actual_tokens = lexer.lex(md);
+    let expected_tokens = tokens;
+
+    // assert_eq!(actual_tokens, expected_tokens);
 }
 
 
@@ -36,7 +36,7 @@ mod paragraph {
                         title: "".to_string(),
                         text: "paragraph 1".to_string(),
                         tokens: vec![],
-                        tag: 0,
+                        tag: "".to_string(),
                         ordered: "".to_string(),
                         start: 0,
                         lang: "".to_string(),
@@ -44,11 +44,12 @@ mod paragraph {
                         items: vec![],
                         depth: 0,
                         escaped: false,
+                        pre: false,
                         header: vec![],
                         code_block_style: "".to_string()
                     },
                 ],
-                tag: 0,
+                tag: "".to_string(),
                 ordered: "".to_string(),
                 start: 0,
                 lang: "".to_string(),
@@ -56,6 +57,7 @@ mod paragraph {
                 items: vec![],
                 depth: 0,
                 escaped: false,
+                pre: false,
                 header: vec![],
                 code_block_style: "".to_string()
             },
@@ -66,7 +68,7 @@ mod paragraph {
                 title: "".to_string(),
                 text: "".to_string(),
                 tokens: vec![],
-                tag: 0,
+                tag: "".to_string(),
                 ordered: "".to_string(),
                 start: 0,
                 lang: "".to_string(),
@@ -74,6 +76,7 @@ mod paragraph {
                 items: vec![],
                 depth: 0,
                 escaped: false,
+                pre: false,
                 header: vec![],
                 code_block_style: "".to_string()
             },
@@ -91,7 +94,7 @@ mod paragraph {
                         title: "".to_string(),
                         text: "paragraph 2".to_string(),
                         tokens: vec![],
-                        tag: 0,
+                        tag: "".to_string(),
                         ordered: "".to_string(),
                         start: 0,
                         lang: "".to_string(),
@@ -99,11 +102,12 @@ mod paragraph {
                         items: vec![],
                         depth: 0,
                         escaped: false,
+                        pre: false,
                         header: vec![],
                         code_block_style: "".to_string()
                     },
                 ],
-                tag: 0,
+                tag: "".to_string(),
                 ordered: "".to_string(),
                 start: 0,
                 lang: "".to_string(),
@@ -111,6 +115,7 @@ mod paragraph {
                 items: vec![],
                 depth: 0,
                 escaped: false,
+                pre: false,
                 header: vec![],
                 code_block_style: "".to_string()
             }

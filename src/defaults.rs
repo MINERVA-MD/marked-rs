@@ -1,3 +1,4 @@
+use crate::rules::Rules;
 use crate::tokenizer::Token;
 
 #[derive(Clone)]
@@ -12,7 +13,7 @@ pub struct Options {
     pub mangle: bool,
     pub pedantic: bool,
     pub sanitize: bool,
-    pub sanitizer: Option<&'static str>,
+    pub sanitizer: Option<fn(cap: &str)->String>,
     pub silent: bool,
     pub smart_lists: bool,
     pub smartypants: bool,
@@ -88,7 +89,7 @@ pub fn get_default_options() -> Options {
         base_url: "",
         breaks: false,
         extensions: None,
-        gfm: false,
+        gfm: true,
         header_ids: false,
         header_prefix: "",
         lang_prefix: "",
@@ -105,4 +106,6 @@ pub fn get_default_options() -> Options {
         xhtml: false
     }
 }
+
+
 

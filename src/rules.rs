@@ -1,8 +1,8 @@
-// use std::fs;
-use onig::{Captures, Regex};
-// use regex::{Captures, Regex};
+use regex::Regex;
+use fancy_regex::*;
 use lazy_static::lazy_static;
 use serde::{Serialize, Deserialize};
+use crate::defaults::Options;
 
 lazy_static! {
     static ref CARET: regex::Regex = regex::Regex::new("(^|[^\\[])\\^").unwrap();
@@ -173,32 +173,61 @@ impl Block {
         }
     }
 
-    pub fn get_grammar_regex(&self, rule: MDBlock, opt: Option<&str>) -> Regex {
+    pub fn get_grammar_regex(&self, rule: MDBlock, opt: Option<&str>) -> regex::Regex {
         match rule {
-            MDBlock::Newline        => Regex::new(self.newline.as_str()).unwrap(),
-            MDBlock::Code           => Regex::new(self.code.as_str()).unwrap(),
-            MDBlock::Fences         => Regex::new(self.fences.as_str()).unwrap(),
-            MDBlock::Hr             => Regex::new(self.hr.as_str()).unwrap(),
-            MDBlock::Heading        => Regex::new(self.heading.as_str()).unwrap(),
-            MDBlock::Blockquote     => Regex::new(self.blockquote.as_str()).unwrap(),
-            MDBlock::List           => Regex::new(self.list.as_str()).unwrap(),
-            MDBlock::Html           => Regex::new(self.html.as_str()).unwrap(),
-            MDBlock::Def            => Regex::new(self.def.as_str()).unwrap(),
-            MDBlock::Table          => Regex::new(self.table.as_str()).unwrap(),
-            MDBlock::LHeading       => Regex::new(self.l_heading.as_str()).unwrap(),
-            MDBlock::Paragraph      => Regex::new(self.paragraph.as_str()).unwrap(),
-            MDBlock::Text           => Regex::new(self.text.as_str()).unwrap(),
-            MDBlock::Label          => Regex::new(self.label.as_str()).unwrap(),
-            MDBlock::Title          => Regex::new(self.title.as_str()).unwrap(),
-            MDBlock::Bullet         => Regex::new(self.bullet.as_str()).unwrap(),
-            MDBlock::ListItemStart  => Regex::new(self.list_item_start.as_str()).unwrap(),
-            MDBlock::Tag            => Regex::new(self.tag.as_str()).unwrap(),
-            MDBlock::Comment        => Regex::new(self.comment.as_str()).unwrap(),
+            MDBlock::Newline        => regex::Regex::new(self.newline.as_str()).unwrap(),
+            MDBlock::Code           => regex::Regex::new(self.code.as_str()).unwrap(),
+            MDBlock::Fences         => regex::Regex::new(self.fences.as_str()).unwrap(),
+            MDBlock::Hr             => regex::Regex::new(self.hr.as_str()).unwrap(),
+            MDBlock::Heading        => regex::Regex::new(self.heading.as_str()).unwrap(),
+            MDBlock::Blockquote     => regex::Regex::new(self.blockquote.as_str()).unwrap(),
+            MDBlock::List           => regex::Regex::new(self.list.as_str()).unwrap(),
+            MDBlock::Html           => regex::Regex::new(self.html.as_str()).unwrap(),
+            MDBlock::Def            => regex::Regex::new(self.def.as_str()).unwrap(),
+            MDBlock::Table          => regex::Regex::new(self.table.as_str()).unwrap(),
+            MDBlock::LHeading       => regex::Regex::new(self.l_heading.as_str()).unwrap(),
+            MDBlock::Paragraph      => regex::Regex::new(self.paragraph.as_str()).unwrap(),
+            MDBlock::Text           => regex::Regex::new(self.text.as_str()).unwrap(),
+            MDBlock::Label          => regex::Regex::new(self.label.as_str()).unwrap(),
+            MDBlock::Title          => regex::Regex::new(self.title.as_str()).unwrap(),
+            MDBlock::Bullet         => regex::Regex::new(self.bullet.as_str()).unwrap(),
+            MDBlock::ListItemStart  => regex::Regex::new(self.list_item_start.as_str()).unwrap(),
+            MDBlock::Tag            => regex::Regex::new(self.tag.as_str()).unwrap(),
+            MDBlock::Comment        => regex::Regex::new(self.comment.as_str()).unwrap(),
         }
     }
 
-    pub fn exec<'a>(&self, src: &'a str, rule: MDBlock) -> Option<Captures<'a>> {
+    pub fn exec<'a>(&self, src: &'a str, rule: MDBlock) -> Option<regex::Captures<'a>> {
         self.get_grammar_regex(rule, None).captures(src)
+    }
+
+
+    pub fn get_grammar_fc_regex(&self, rule: MDBlock, opt: Option<&str>) -> fancy_regex::Regex {
+        match rule {
+            MDBlock::Newline        => fancy_regex::Regex::new(self.newline.as_str()).unwrap(),
+            MDBlock::Code           => fancy_regex::Regex::new(self.code.as_str()).unwrap(),
+            MDBlock::Fences         => fancy_regex::Regex::new(self.fences.as_str()).unwrap(),
+            MDBlock::Hr             => fancy_regex::Regex::new(self.hr.as_str()).unwrap(),
+            MDBlock::Heading        => fancy_regex::Regex::new(self.heading.as_str()).unwrap(),
+            MDBlock::Blockquote     => fancy_regex::Regex::new(self.blockquote.as_str()).unwrap(),
+            MDBlock::List           => fancy_regex::Regex::new(self.list.as_str()).unwrap(),
+            MDBlock::Html           => fancy_regex::Regex::new(self.html.as_str()).unwrap(),
+            MDBlock::Def            => fancy_regex::Regex::new(self.def.as_str()).unwrap(),
+            MDBlock::Table          => fancy_regex::Regex::new(self.table.as_str()).unwrap(),
+            MDBlock::LHeading       => fancy_regex::Regex::new(self.l_heading.as_str()).unwrap(),
+            MDBlock::Paragraph      => fancy_regex::Regex::new(self.paragraph.as_str()).unwrap(),
+            MDBlock::Text           => fancy_regex::Regex::new(self.text.as_str()).unwrap(),
+            MDBlock::Label          => fancy_regex::Regex::new(self.label.as_str()).unwrap(),
+            MDBlock::Title          => fancy_regex::Regex::new(self.title.as_str()).unwrap(),
+            MDBlock::Bullet         => fancy_regex::Regex::new(self.bullet.as_str()).unwrap(),
+            MDBlock::ListItemStart  => fancy_regex::Regex::new(self.list_item_start.as_str()).unwrap(),
+            MDBlock::Tag            => fancy_regex::Regex::new(self.tag.as_str()).unwrap(),
+            MDBlock::Comment        => fancy_regex::Regex::new(self.comment.as_str()).unwrap(),
+        }
+    }
+
+    pub fn exec_fc<'a>(&self, src: &'a str, rule: MDBlock) -> Option<fancy_regex::Captures<'a>> {
+        self.get_grammar_fc_regex(rule, None).captures(src).unwrap()
     }
 }
 
@@ -255,55 +284,103 @@ impl Inline {
 
     }
 
-    pub fn get_grammar_regex(&self, rule: MDInline, opt: Option<&str>) -> Regex {
+    pub fn get_grammar_regex(&self, rule: MDInline, opt: Option<&str>) -> regex::Regex {
         match rule {
-            MDInline::Escape            => Regex::new(self.escape.as_str()).unwrap(),
-            MDInline::Autolink          => Regex::new(self.autolink.as_str()).unwrap(),
-            MDInline::Url               => Regex::new(self.url.as_str()).unwrap(),
-            MDInline::Tag               => Regex::new(self.tag.as_str()).unwrap(),
-            MDInline::Link              => Regex::new(self.link.as_str()).unwrap(),
-            MDInline::RefLink           => Regex::new(self.ref_link.as_str()).unwrap(),
-            MDInline::NoLink            => Regex::new(self.no_link.as_str()).unwrap(),
-            MDInline::RefLinkSearch     => Regex::new(self.ref_link_search.as_str()).unwrap(),
-            MDInline::EmStrong          => Regex::new("").unwrap(),
-            MDInline::Code              => Regex::new(self.code.as_str()).unwrap(),
-            MDInline::Br                => Regex::new(self.br.as_str()).unwrap(),
-            MDInline::Del               => Regex::new(self.del.as_str()).unwrap(),
-            MDInline::Text              => Regex::new(self.text.as_str()).unwrap(),
-            MDInline::Punctuation       => Regex::new(self.punctuation.as_str()).unwrap(),
-            MDInline::_Punctuation      => Regex::new(self._punctuation.as_str()).unwrap(),
-            MDInline::BlockSkip         => Regex::new(self.block_skip.as_str()).unwrap(),
-            MDInline::EscapedEmSt       => Regex::new(self.escaped_em_st.as_str()).unwrap(),
-            MDInline::Comment           => Regex::new(self.comment.as_str()).unwrap(),
-            MDInline::Escapes           => Regex::new(self.escapes.as_str()).unwrap(),
-            MDInline::Scheme            => Regex::new(self.scheme.as_str()).unwrap(),
-            MDInline::Email             => Regex::new(self.email.as_str()).unwrap(),
-            MDInline::Attribute         => Regex::new(self.attribute.as_str()).unwrap(),
-            MDInline::Label             => Regex::new(self.label.as_str()).unwrap(),
-            MDInline::Href              => Regex::new(self.href.as_str()).unwrap(),
-            MDInline::Title             => Regex::new(self.title.as_str()).unwrap(),
-            MDInline::Breaks            => Regex::new(self.breaks.as_str()).unwrap(),
+            MDInline::Escape            => regex::Regex::new(self.escape.as_str()).unwrap(),
+            MDInline::Autolink          => regex::Regex::new(self.autolink.as_str()).unwrap(),
+            MDInline::Url               => regex::Regex::new(self.url.as_str()).unwrap(),
+            MDInline::Tag               => regex::Regex::new(self.tag.as_str()).unwrap(),
+            MDInline::Link              => regex::Regex::new(self.link.as_str()).unwrap(),
+            MDInline::RefLink           => regex::Regex::new(self.ref_link.as_str()).unwrap(),
+            MDInline::NoLink            => regex::Regex::new(self.no_link.as_str()).unwrap(),
+            MDInline::RefLinkSearch     => regex::Regex::new(self.ref_link_search.as_str()).unwrap(),
+            MDInline::EmStrong          => regex::Regex::new("").unwrap(),
+            MDInline::Code              => regex::Regex::new(self.code.as_str()).unwrap(),
+            MDInline::Br                => regex::Regex::new(self.br.as_str()).unwrap(),
+            MDInline::Del               => regex::Regex::new(self.del.as_str()).unwrap(),
+            MDInline::Text              => regex::Regex::new(self.text.as_str()).unwrap(),
+            MDInline::Punctuation       => regex::Regex::new(self.punctuation.as_str()).unwrap(),
+            MDInline::_Punctuation      => regex::Regex::new(self._punctuation.as_str()).unwrap(),
+            MDInline::BlockSkip         => regex::Regex::new(self.block_skip.as_str()).unwrap(),
+            MDInline::EscapedEmSt       => regex::Regex::new(self.escaped_em_st.as_str()).unwrap(),
+            MDInline::Comment           => regex::Regex::new(self.comment.as_str()).unwrap(),
+            MDInline::Escapes           => regex::Regex::new(self.escapes.as_str()).unwrap(),
+            MDInline::Scheme            => regex::Regex::new(self.scheme.as_str()).unwrap(),
+            MDInline::Email             => regex::Regex::new(self.email.as_str()).unwrap(),
+            MDInline::Attribute         => regex::Regex::new(self.attribute.as_str()).unwrap(),
+            MDInline::Label             => regex::Regex::new(self.label.as_str()).unwrap(),
+            MDInline::Href              => regex::Regex::new(self.href.as_str()).unwrap(),
+            MDInline::Title             => regex::Regex::new(self.title.as_str()).unwrap(),
+            MDInline::Breaks            => regex::Regex::new(self.breaks.as_str()).unwrap(),
             MDInline::Strong            => {
-                return if opt.unwrap() == "start" { Regex::new(self.strong.start.as_str()).unwrap() }
-                else if opt.unwrap() == "end_ast" { Regex::new(self.strong.end_ast.as_str()).unwrap() }
-                else if opt.unwrap() == "end_und" { Regex::new(self.strong.end_und.as_str()).unwrap() }
-                else                              { Regex::new(self.strong.middle.as_str()).unwrap() }
+                return if opt.unwrap() == "start" { regex::Regex::new(self.strong.start.as_str()).unwrap() }
+                else if opt.unwrap() == "end_ast" { regex::Regex::new(self.strong.end_ast.as_str()).unwrap() }
+                else if opt.unwrap() == "end_und" { regex::Regex::new(self.strong.end_und.as_str()).unwrap() }
+                else                              { regex::Regex::new(self.strong.middle.as_str()).unwrap() }
             }
             MDInline::Em                => {
-                return if opt.unwrap() == "start" { Regex::new(self.em.start.as_str()).unwrap() }
-                else if opt.unwrap() == "end_ast" { Regex::new(self.em.end_ast.as_str()).unwrap() }
-                else if opt.unwrap() == "end_und" { Regex::new(self.em.end_und.as_str()).unwrap() }
-                else                              { Regex::new(self.em.middle.as_str()).unwrap() }
+                return if opt.unwrap() == "start" { regex::Regex::new(self.em.start.as_str()).unwrap() }
+                else if opt.unwrap() == "end_ast" { regex::Regex::new(self.em.end_ast.as_str()).unwrap() }
+                else if opt.unwrap() == "end_und" { regex::Regex::new(self.em.end_und.as_str()).unwrap() }
+                else                              { regex::Regex::new(self.em.middle.as_str()).unwrap() }
             }
-            MDInline::ExtendedEmail         => Regex::new(self.extended_email.as_str()).unwrap(),
-            MDInline::Backpedal             => Regex::new(self.backpedal.as_str()).unwrap()
+            MDInline::ExtendedEmail         => regex::Regex::new(self.extended_email.as_str()).unwrap(),
+            MDInline::Backpedal             => regex::Regex::new(self.backpedal.as_str()).unwrap()
         }
     }
 
-    // pub fn exec(&self, src: String, rule: MDInline) -> Option<Captures> {
-    //     // self.get_grammar_regex(rule, None).captures(src)
-    //     None
-    // }
+    pub fn get_grammar_fc_regex(&self, rule: MDInline, opt: Option<&str>) -> fancy_regex::Regex {
+        match rule {
+            MDInline::Escape            => fancy_regex::Regex::new(self.escape.as_str()).unwrap(),
+            MDInline::Autolink          => fancy_regex::Regex::new(self.autolink.as_str()).unwrap(),
+            MDInline::Url               => fancy_regex::Regex::new(self.url.as_str()).unwrap(),
+            MDInline::Tag               => fancy_regex::Regex::new(self.tag.as_str()).unwrap(),
+            MDInline::Link              => fancy_regex::Regex::new(self.link.as_str()).unwrap(),
+            MDInline::RefLink           => fancy_regex::Regex::new(self.ref_link.as_str()).unwrap(),
+            MDInline::NoLink            => fancy_regex::Regex::new(self.no_link.as_str()).unwrap(),
+            MDInline::RefLinkSearch     => fancy_regex::Regex::new(self.ref_link_search.as_str()).unwrap(),
+            MDInline::EmStrong          => fancy_regex::Regex::new("").unwrap(),
+            MDInline::Code              => fancy_regex::Regex::new(self.code.as_str()).unwrap(),
+            MDInline::Br                => fancy_regex::Regex::new(self.br.as_str()).unwrap(),
+            MDInline::Del               => fancy_regex::Regex::new(self.del.as_str()).unwrap(),
+            MDInline::Text              => fancy_regex::Regex::new(self.text.as_str()).unwrap(),
+            MDInline::Punctuation       => fancy_regex::Regex::new(self.punctuation.as_str()).unwrap(),
+            MDInline::_Punctuation      => fancy_regex::Regex::new(self._punctuation.as_str()).unwrap(),
+            MDInline::BlockSkip         => fancy_regex::Regex::new(self.block_skip.as_str()).unwrap(),
+            MDInline::EscapedEmSt       => fancy_regex::Regex::new(self.escaped_em_st.as_str()).unwrap(),
+            MDInline::Comment           => fancy_regex::Regex::new(self.comment.as_str()).unwrap(),
+            MDInline::Escapes           => fancy_regex::Regex::new(self.escapes.as_str()).unwrap(),
+            MDInline::Scheme            => fancy_regex::Regex::new(self.scheme.as_str()).unwrap(),
+            MDInline::Email             => fancy_regex::Regex::new(self.email.as_str()).unwrap(),
+            MDInline::Attribute         => fancy_regex::Regex::new(self.attribute.as_str()).unwrap(),
+            MDInline::Label             => fancy_regex::Regex::new(self.label.as_str()).unwrap(),
+            MDInline::Href              => fancy_regex::Regex::new(self.href.as_str()).unwrap(),
+            MDInline::Title             => fancy_regex::Regex::new(self.title.as_str()).unwrap(),
+            MDInline::Breaks            => fancy_regex::Regex::new(self.breaks.as_str()).unwrap(),
+            MDInline::Strong            => {
+                return if opt.unwrap() == "start" { fancy_regex::Regex::new(self.strong.start.as_str()).unwrap() }
+                else if opt.unwrap() == "end_ast" { fancy_regex::Regex::new(self.strong.end_ast.as_str()).unwrap() }
+                else if opt.unwrap() == "end_und" { fancy_regex::Regex::new(self.strong.end_und.as_str()).unwrap() }
+                else                              { fancy_regex::Regex::new(self.strong.middle.as_str()).unwrap() }
+            }
+            MDInline::Em                => {
+                return if opt.unwrap() == "start" { fancy_regex::Regex::new(self.em.start.as_str()).unwrap() }
+                else if opt.unwrap() == "end_ast" { fancy_regex::Regex::new(self.em.end_ast.as_str()).unwrap() }
+                else if opt.unwrap() == "end_und" { fancy_regex::Regex::new(self.em.end_und.as_str()).unwrap() }
+                else                              { fancy_regex::Regex::new(self.em.middle.as_str()).unwrap() }
+            }
+            MDInline::ExtendedEmail         => fancy_regex::Regex::new(self.extended_email.as_str()).unwrap(),
+            MDInline::Backpedal             => fancy_regex::Regex::new(self.backpedal.as_str()).unwrap()
+        }
+    }
+
+    pub fn exec<'a>(&self, src: &'a str, rule: MDInline) -> Option<regex::Captures<'a>> {
+        self.get_grammar_regex(rule, None).captures(src)
+    }
+
+    pub fn exec_fc<'a>(&self, src: &'a str, rule: MDInline) -> Option<Captures<'a>> {
+        self.get_grammar_fc_regex(rule, None).captures(src).unwrap()
+    }
 }
 
 impl Edit {
@@ -816,6 +893,99 @@ pub fn get_default_rules() -> Rules {
     let block = blocks.get(0).unwrap();
     let inlines = setup_inline_rules();
     let inline = inlines.get(0).unwrap();
+    Rules {
+        block: Block {
+            newline: block.newline.to_string(),
+            code: block.code.to_string(),
+            fences: block.fences.to_string(),
+            hr: block.hr.to_string(),
+            heading: block.heading.to_string(),
+            blockquote: block.blockquote.to_string(),
+            list: block.list.to_string(),
+            html: block.html.to_string(),
+            def: block.def.to_string(),
+            table: block.table.to_string(),
+            l_heading: block.l_heading.to_string(),
+            paragraph: block.paragraph.to_string(),
+            text: block.paragraph.to_string(),
+            label: block.label.to_string(),
+            title: block.title.to_string(),
+            bullet: block.bullet.to_string(),
+            list_item_start: block.list_item_start.to_string(),
+            tag: block.tag.to_string(),
+            comment: block.comment.to_string()
+        },
+        inline: Inline {
+            escape: inline.escape.to_string(),
+            autolink: inline.autolink.to_string(),
+            url: inline.url.to_string(),
+            tag: inline.tag.to_string(),
+            link: inline.link.to_string(),
+            ref_link: inline.ref_link.to_string(),
+            no_link: inline.no_link.to_string(),
+            ref_link_search: inline.ref_link_search.to_string(),
+            em_strong: Delim {
+                l_delim: inline.em_strong.l_delim.to_string(),
+                r_delim_ast: inline.em_strong.r_delim_ast.to_string(),
+                r_delim_und: inline.em_strong.r_delim_und.to_string()
+            },
+            code: inline.code.to_string(),
+            br: inline.br.to_string(),
+            del: inline.del.to_string(),
+            text: inline.text.to_string(),
+            punctuation: inline.punctuation.to_string(),
+            _punctuation: inline._punctuation.to_string(),
+            block_skip: inline.block_skip.to_string(),
+            escaped_em_st: inline.escaped_em_st.to_string(),
+            comment: inline.comment.to_string(),
+            escapes: inline.escapes.to_string(),
+            scheme: inline.scheme.to_string(),
+            email: inline.email.to_string(),
+            attribute: inline.attribute.to_string(),
+            label: inline.label.to_string(),
+            href: inline.href.to_string(),
+            title: inline.href.to_string(),
+            breaks: inline.breaks.to_string(),
+            strong: Bold {
+                start: inline.strong.start.to_string(),
+                middle: inline.strong.middle.to_string(),
+                end_ast: inline.strong.end_ast.to_string(),
+                end_und: inline.strong.end_und.to_string()
+            },
+            em: Bold {
+                start: inline.em.start.to_string(),
+                middle: inline.em.middle.to_string(),
+                end_ast: inline.em.end_ast.to_string(),
+                end_und: inline.em.end_und.to_string()
+            },
+            extended_email: inline.extended_email.to_string(),
+            backpedal: inline.backpedal.to_string()
+        }
+    }
+}
+
+pub fn get_rules(options: Options) -> Rules {
+
+    let blocks = setup_block_rules();
+    let inlines = setup_inline_rules();
+    let mut block = blocks.get(0).unwrap();
+    let mut inline = inlines.get(0).unwrap();
+
+    // Block: [normal_block, gfm_block, pedantic_block]
+    // Inline: [normal_inline, pedantic_inline, gfm_inline, gfm_with_breaks_inline]
+    if options.pedantic {
+        block = blocks.get(2).unwrap();
+        inline = inlines.get(1).unwrap();
+    } else if options.gfm {
+        block = blocks.get(1).unwrap();
+        if options.breaks {
+            inline = inlines.get(3).unwrap();
+        } else {
+            inline = inlines.get(2).unwrap();
+        }
+    }
+
+
     Rules {
         block: Block {
             newline: block.newline.to_string(),

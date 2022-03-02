@@ -1,11 +1,11 @@
 // Helpers
 use std::borrow::{Cow};
 use lazy_static::lazy_static;
-use regex::{Captures, Regex};
+use fancy_regex::{Captures, Regex};
 
 lazy_static! {
     static ref ESCAPE_TEST: Regex = Regex::new("[&<>\"']").unwrap();
-    static ref ESCAPE_TEST_NO_ENCODE: Regex = Regex::new("[<>\"']|&(?!#?\\w+;)").unwrap();
+    static ref ESCAPE_TEST_NO_ENCODE: Regex = fancy_regex::Regex::new("[<>\"']|&(?!#?\\w+;)").unwrap();
     static ref UNESCAPE_TEST: Regex = Regex::new("(?i)&(#(?:\\d+)|(?:#x[0-9A-Fa-f]+)|(?:\\w+));?").unwrap();
     static ref CARET: Regex = Regex::new(r"(^|[^\\[])\\^").unwrap();
 }
@@ -60,15 +60,14 @@ fn get_unescaped_html(html: &str) -> Cow<str> {
 
 pub fn escape(html: &str, encode: bool) -> String {
     if encode {
-        if ESCAPE_TEST.is_match(html) {
+        if ESCAPE_TEST.is_match(html).unwrap() {
             return get_escaped_html(html).to_string();
         }
     } else {
-        if ESCAPE_TEST_NO_ENCODE.is_match(html) {
+        if ESCAPE_TEST_NO_ENCODE.is_match(html).unwrap() {
             return get_unescaped_html(html).to_string();
         }
     }
-
     return html.to_string();
 }
 
