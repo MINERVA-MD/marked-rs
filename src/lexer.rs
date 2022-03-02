@@ -11,34 +11,34 @@ pub struct State {
     pub top: bool
 }
 
-pub struct Lexer<'a> {
+pub struct Lexer {
     pub links: Vec<String>,
     pub tokens: Vec<Token>,
     pub token_links: Vec<&'static str>,
     pub options: Options,
     pub tokenizer: Tokenizer,
-    pub inline_queue: Vec<InlineToken<'a>>,
+    pub inline_queue: Vec<InlineToken>,
     pub state: State
 }
 
 #[derive(Clone, Debug)]
-pub struct InlineToken<'a> {
+pub struct InlineToken {
     pub src: String,
-    pub tokens: &'a mut Vec<Token>
+    pub tokens: Vec<Token>
 }
 
-pub trait ILexer<'a> {
+pub trait ILexer {
     fn lex(&mut self, src: &str) -> &mut Vec<Token>;
     fn block_tokens(&mut self, src: &str, tokens: &mut Vec<Token>, opt: &str);
-    fn inline_tokens(&mut self, src: &str, tokens: &mut Vec<Token>) -> &mut Vec<Token>;
-    fn lex_inline(&mut self, src: &str, options: Options) -> &mut Vec<Token>;
+    fn inline_tokens(&mut self, src: &str, tokens: Vec<Token>) -> Vec<Token>;
+    fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Token>;
     fn check_extensions_block(&mut self, extensions_block: Option<&'static str>) -> bool;
-    fn inline(&mut self, src: String, tokens: &mut Vec<Token>);
+    fn inline(&mut self, src: String, tokens: Vec<Token>);
     fn check_extensions_inline(&mut self, extensions_block: Option<&'static str>) -> bool;
 }
 
 
-impl Lexer<'a> {
+impl Lexer {
     pub fn new(options: Options) -> Self  {
         Self {
             links: vec![],
@@ -73,7 +73,7 @@ impl ILexer for Lexer {
         let mut next: InlineToken;
 
         loop {
-            if self.inline_queue.len() == 0 {
+            if self.inline_queue.len() > 0 {
                 break;
             } else {
                 next = self.inline_queue.remove(0);
@@ -340,8 +340,8 @@ impl ILexer for Lexer {
                 token.is_some()
             {
                 println!("Entered Paragraph Block");
-                let mut _token = token.unwrap();
-                self.inline(String::from(_token.text.as_str()), &mut _token.tokens);
+                let _token = token.unwrap();
+                self.inline(String::from(_token.text.as_str()), _token.tokens.clone());
 
                 let idx = _token.raw.len();
 
@@ -388,8 +388,8 @@ impl ILexer for Lexer {
             if token.is_some() {
                 println!("Entered Text Block");
 
-                let mut _token = token.unwrap();
-                self.inline(String::from(_token.text.as_str()), &mut _token.tokens);
+                let _token = token.unwrap();
+                self.inline(String::from(_token.text.as_str()), _token.tokens.clone());
 
                 let idx = _token.raw.len();
 
@@ -444,7 +444,7 @@ impl ILexer for Lexer {
         // return tokens;
     }
 
-    fn inline_tokens(&mut self, src: &str, mut tokens: &mut Vec<Token>) -> &mut Vec<Token> {
+    fn inline_tokens(&mut self, src: &str, mut tokens: Vec<Token>) -> Vec<Token> {
         // todo!();
         // Mask out reflinks
         if self.links.len() > 0 {
@@ -682,21 +682,26 @@ impl ILexer for Lexer {
                     panic!("{}", err_msg);
                 }
             }
+            // count += 1;
         }
 
+
+        println!("Bottom:\n{:?}", tokens);
+
+        println!("Returning tokens");
         return tokens;
     }
 
-    fn lex_inline(&mut self, src: &str, options: Options) -> &mut Vec<Token> {
+    fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Token> {
         let mut lexer = Lexer::new(options);
-        return &mut lexer.inline_tokens(src, &mut vec![]);
+        return lexer.inline_tokens(src, vec![]);
     }
 
     fn check_extensions_block(&mut self, extensions_block: Option<&'static str>) -> bool {
         return true;
     }
 
-    fn inline(&mut self, src: String, tokens: &mut Vec<Token>) {
+    fn inline(&mut self, src: String, tokens: Vec<Token>) {
         self.inline_queue.push(
             InlineToken {
                 src,

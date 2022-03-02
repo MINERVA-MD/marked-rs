@@ -738,6 +738,7 @@ impl ITokenizer for Tokenizer {
                 header: vec![],
                 code_block_style: "".to_string()
             };
+            println!("{:?}", token);
             return Some(token);
         }
         None
