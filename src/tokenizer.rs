@@ -24,6 +24,8 @@ pub struct Token {
     pub depth: usize,
     pub escaped: bool,
     pub pre: bool,
+    pub align: Vec<String>,
+    pub rows: Vec<Token>,
     pub header: Vec<Token>,
     pub code_block_style: String
 }
@@ -53,6 +55,8 @@ impl Token {
             depth: 0,
             escaped: false,
             pre: false,
+            align: vec![],
+            rows: vec![],
             header: vec![],
             code_block_style: "".to_string()
         }
@@ -159,6 +163,8 @@ impl ITokenizer for Tokenizer {
                     depth: 0,
                     escaped: false,
                     pre: false,
+                    align: vec![],
+                    rows: vec![],
                     header: vec![],
                     code_block_style: "".to_string()
                 });
@@ -193,6 +199,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "indented".to_string()
             });
@@ -232,6 +240,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             });
@@ -248,7 +258,8 @@ impl ITokenizer for Tokenizer {
 
             if regx("#$").is_match(text.as_str()) {
                 let trimmed = regx("#*$").replace_all(text.as_str(), "").to_string();
-
+                // TODO : ^ Implement proper rtrim
+                println!("Trimmed:{}************************", trimmed);
                 if self.options.pedantic {
                     text = trimmed.trim().to_string();
                 } else if trimmed == "" || regx(" $").is_match(trimmed.as_str()) {
@@ -275,6 +286,8 @@ impl ITokenizer for Tokenizer {
                 depth,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             };
@@ -309,6 +322,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             })
@@ -344,6 +359,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             })
@@ -385,6 +402,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             };
@@ -432,6 +451,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             });
@@ -440,6 +461,53 @@ impl ITokenizer for Tokenizer {
     }
 
     fn table(&mut self, src: &str) -> Option<Token> {
+        let table_caps = self.rules.block.exec_fc(src, MDBlock::Table);
+
+        if table_caps.is_some() {
+            let caps = table_caps.unwrap();
+            let raw = caps.get(0).map_or("", |m| m.as_str());
+            let cap1 = caps.get(1).map_or("", |m| m.as_str());
+            let cap2 = caps.get(2).map_or("", |m| m.as_str());
+            let cap3 = caps.get(3).map_or("", |m| m.as_str());
+
+            // let align_ = regx(r#"^ *|\| *$"#).replace_all(cap2, "").to_string().as_str();
+            // let align: Vec<String> = regx(r#" *\| *"#)
+            //     .split(align_)
+            //     .map(|x| x.to_string())
+            //     .collect();
+            //
+            // let rows_= if cap3.trim() != "" {
+            //     regx(r#"\n[ \t]*$"#)
+            //         .replace_all(cap3, "")
+            //         .split("\n")
+            //         .map(|x| x.to_string())
+            //         .collect()
+            // } else {
+            //     vec![]
+            // };
+            //
+            // let item = Token {
+            //     _type: "table",
+            //     raw: "".to_string(),
+            //     href: "".to_string(),
+            //     title: "".to_string(),
+            //     text: "".to_string(),
+            //     tokens: vec![],
+            //     tag: "".to_string(),
+            //     ordered: "".to_string(),
+            //     start: 0,
+            //     lang: "".to_string(),
+            //     loose: false,
+            //     items: vec![],
+            //     depth: 0,
+            //     escaped: false,
+            //     pre: false,
+            //     align: vec![],
+            //     rows: vec![],
+            //     header: vec![],
+            //     code_block_style: "".to_string()
+            // };
+        }
         None
     }
 
@@ -475,12 +543,12 @@ impl ITokenizer for Tokenizer {
                 depth,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             };
 
-            // TODO: Implement to move tokens
-            // lexer.inline(token.text, token.tokens);
             return Some(token);
         }
         None
@@ -515,6 +583,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             };
@@ -546,6 +616,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             };
@@ -581,6 +653,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             });
@@ -631,6 +705,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             };
@@ -671,6 +747,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             };
@@ -736,6 +814,8 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                align: vec![],
+                rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             };
@@ -769,6 +849,8 @@ pub fn output_link(cap: Vec<String>, link: Link, raw: String, mut lexer: Lexer) 
             depth: 0,
             escaped: false,
             pre: false,
+            align: vec![],
+            rows: vec![],
             header: vec![],
             code_block_style: "".to_string()
         };
@@ -791,6 +873,8 @@ pub fn output_link(cap: Vec<String>, link: Link, raw: String, mut lexer: Lexer) 
             depth: 0,
             escaped: false,
             pre: false,
+            align: vec![],
+            rows: vec![],
             header: vec![],
             code_block_style: "".to_string()
         }

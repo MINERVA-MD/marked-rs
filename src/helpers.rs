@@ -81,8 +81,8 @@ pub fn clean_url(sanitize: bool, base: &str, href: &str) -> String {
     todo!()
 }
 
-pub fn split_cells(table_row: &str, count: i32) -> String {
-    todo!()
+pub fn split_cells(table_row: &str, count: u32) -> Vec<String> {
+    vec![]
 }
 
 pub fn resolve_url(base: &str, href: &str) -> String {
