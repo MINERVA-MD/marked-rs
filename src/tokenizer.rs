@@ -1,9 +1,10 @@
-use std::fmt;
+use std::{fmt, fs};
 use std::fmt::Formatter;
+use regex::Regex;
 use crate::defaults::Options;
-use crate::helpers::{escape};
-use crate::rules::{MDBlock, MDInline, Rules};
-use crate::lexer::{ILexer, Lexer, regx};
+use crate::helpers::{escape, split_cells};
+use crate::rules::{get_rules, MDBlock, MDInline, Rules};
+use crate::lexer::{ILexer, InlineToken, Lexer, regx};
 
 
 #[derive(Clone, PartialEq)]
@@ -25,7 +26,7 @@ pub struct Token {
     pub escaped: bool,
     pub pre: bool,
     pub align: Vec<String>,
-    pub rows: Vec<Token>,
+    pub rows: Vec<Vec<Token>>,
     pub header: Vec<Token>,
     pub code_block_style: String
 }
@@ -99,7 +100,7 @@ pub trait ITokenizer {
     fn list(&mut self, src: &str) -> Option<Token>;
     fn html(&mut self, src: &str) -> Option<Token>;
     fn def(&mut self, src: &str) -> Option<Token>;
-    fn table(&mut self, src: &str) -> Option<Token>;
+    fn table(&mut self, src: &str, tokens: &mut Vec<InlineToken>, curr_idx: usize) -> Option<Token>;
     fn lheading(&mut self, src: &str) -> Option<Token>;
     fn paragraph(&mut self, src: &str) -> Option<Token>;
     fn text(&mut self, src: &str) -> Option<Token>;
@@ -118,13 +119,16 @@ pub trait ITokenizer {
     fn inline_text(&mut self, src: &str, smartypants : fn(text: &str) -> String) -> Option<Token>;
 }
 
+type InlineTokenCallback = fn(&mut Lexer, src: String, tokens: Vec<Token>, parent_block_idx: usize);
+
 pub struct Tokenizer {
     pub options: Options,
-    pub rules: Rules,
+    pub rules: Rules
 }
 
 impl Tokenizer {
-    pub fn new(options: Option<Options>, rules: Rules) -> Self {
+    pub fn new(options: Option<Options>) -> Self {
+        let rules = get_rules(options.unwrap());
         Self {
             options: options.unwrap(),
             rules
@@ -332,20 +336,16 @@ impl ITokenizer for Tokenizer {
     }
 
     fn blockquote(&mut self, src: &str) -> Option<Token> {
-        let blockquote_caps = self.rules.block.exec_fc(src, MDBlock::Hr);
+        let blockquote_caps = self.rules.block.exec_fc(src, MDBlock::Blockquote);
 
         if blockquote_caps.is_some() {
-            let mut lexer = Lexer::new(self.options);
             let caps = blockquote_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
             let text  = regx("(?m)^ *> ?").replace_all(raw, "").to_string();
 
-            // Set tokens in caller instead
-            // let tokens = lexer.block_tokens(text.as_str(), vec![]);
-
             return Some(Token {
                 _type: "blockquote",
-                raw: "".to_string(),
+                raw: raw.to_string(),
                 href: "".to_string(),
                 title: "".to_string(),
                 text,
@@ -460,7 +460,8 @@ impl ITokenizer for Tokenizer {
         None
     }
 
-    fn table(&mut self, src: &str) -> Option<Token> {
+    fn table(&mut self, src: &str, mut tokens: &mut Vec<InlineToken>, curr_idx: usize) -> Option<Token> {
+
         let table_caps = self.rules.block.exec_fc(src, MDBlock::Table);
 
         if table_caps.is_some() {
@@ -470,43 +471,137 @@ impl ITokenizer for Tokenizer {
             let cap2 = caps.get(2).map_or("", |m| m.as_str());
             let cap3 = caps.get(3).map_or("", |m| m.as_str());
 
-            // let align_ = regx(r#"^ *|\| *$"#).replace_all(cap2, "").to_string().as_str();
-            // let align: Vec<String> = regx(r#" *\| *"#)
-            //     .split(align_)
-            //     .map(|x| x.to_string())
-            //     .collect();
-            //
-            // let rows_= if cap3.trim() != "" {
-            //     regx(r#"\n[ \t]*$"#)
-            //         .replace_all(cap3, "")
-            //         .split("\n")
-            //         .map(|x| x.to_string())
-            //         .collect()
-            // } else {
-            //     vec![]
-            // };
-            //
-            // let item = Token {
-            //     _type: "table",
-            //     raw: "".to_string(),
-            //     href: "".to_string(),
-            //     title: "".to_string(),
-            //     text: "".to_string(),
-            //     tokens: vec![],
-            //     tag: "".to_string(),
-            //     ordered: "".to_string(),
-            //     start: 0,
-            //     lang: "".to_string(),
-            //     loose: false,
-            //     items: vec![],
-            //     depth: 0,
-            //     escaped: false,
-            //     pre: false,
-            //     align: vec![],
-            //     rows: vec![],
-            //     header: vec![],
-            //     code_block_style: "".to_string()
-            // };
+            let mut header = split_cells(cap1, None)
+                .into_iter()
+                .map(|header_val| {
+                    Token {
+                        _type: "",
+                        raw: "".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: header_val.to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: "".to_string(),
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    }
+                })
+                .collect::<Vec<Token>>();
+
+
+            let align_replaced = regx(r#"^ *|\| *$"#)
+                .replace_all(cap2, "").to_string();
+
+            let mut align: Vec<String> = regx(r#" *\| *"#)
+                .split(align_replaced.as_str())
+                .map(|x| x.to_string())
+                .collect();
+
+            let rows_= if cap3.trim() != "" {
+                regx(r#"\n[ \t]*$"#)
+                    .replace_all(cap3, "")
+                    .split("\n")
+                    .map(|x| x.to_string())
+                    .collect()
+            } else {
+                vec![]
+            };
+
+            if header.len() == align.len() {
+
+                let mut l = align.len();
+                for i in 0..l {
+                    if regx(r#"^ *-+: *$"#).is_match(align.get(i).unwrap().as_str()) {
+                        align[i] = "right".to_string();
+                    } else if regx(r#"^ *:-+: *$"#).is_match(align.get(i).unwrap().as_str()) {
+                        align[i] = "center".to_string();
+                    } else if regx(r#"^ *:-+ *$"#).is_match(align.get(i).unwrap().as_str()){
+                        align[i] = "left".to_string();
+                    } else {
+                        align[i] = "".to_string();
+                    }
+                }
+
+                l = rows_.len();
+                let mut rows: Vec<Vec<Token>> = vec![];
+                for i in 0..l {
+                    let rows_i = split_cells(rows_[i].as_str(), Some(header.len()))
+                        .into_iter()
+                        .map(|text_val| {
+                            Token {
+                                _type: "",
+                                raw: "".to_string(),
+                                href: "".to_string(),
+                                title: "".to_string(),
+                                text: text_val.to_string(),
+                                tokens: vec![],
+                                tag: "".to_string(),
+                                ordered: "".to_string(),
+                                start: 0,
+                                lang: "".to_string(),
+                                loose: false,
+                                items: vec![],
+                                depth: 0,
+                                escaped: false,
+                                pre: false,
+                                align: vec![],
+                                rows: vec![],
+                                header: vec![],
+                                code_block_style: "".to_string()
+                            }
+                        })
+                        .collect::<Vec<Token>>();
+                    rows.push(rows_i);
+                }
+
+                // parse child tokens inside headers and cells
+
+                // header child tokens
+                l = header.len();
+                for j in 0..l {
+                    header[j].tokens = vec![];
+                    tokens.push(
+                        InlineToken {
+                            src: String::from(header[j].text.as_str()),
+                            tokens: header[j].tokens.clone(),
+                            parent_block_idx: curr_idx
+                        }
+                    );
+                }
+
+                let item = Token {
+                    _type: "table",
+                    raw: raw.to_string(),
+                    href: "".to_string(),
+                    title: "".to_string(),
+                    text: "".to_string(),
+                    tokens: vec![],
+                    tag: "".to_string(),
+                    ordered: "".to_string(),
+                    start: 0,
+                    lang: "".to_string(),
+                    loose: false,
+                    items: vec![],
+                    depth: 0,
+                    escaped: false,
+                    pre: false,
+                    align,
+                    rows,
+                    header,
+                    code_block_style: "".to_string()
+                };
+                return Some(item);
+            }
         }
         None
     }
@@ -567,6 +662,7 @@ impl ITokenizer for Tokenizer {
                 cap1.to_string()
             };
 
+
             let token = Token {
                 _type: "paragraph",
                 raw: raw.to_string(),
@@ -625,7 +721,6 @@ impl ITokenizer for Tokenizer {
         }
         None
     }
-
 
     // Inline
     fn escape(&mut self, src: &str) -> Option<Token> {

@@ -887,7 +887,6 @@ pub fn setup_inline_rules() -> Vec<Inline> {
     inlines
 }
 
-
 pub fn get_default_rules() -> Rules {
     let blocks = setup_block_rules();
     let block = blocks.get(0).unwrap();

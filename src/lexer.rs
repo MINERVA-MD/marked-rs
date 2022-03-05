@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::io::Write;
+use std::rc::Rc;
 use rand::Rng;
 use regex::Regex;
 use crate::defaults::{get_default_options, Options};
@@ -16,10 +18,11 @@ pub struct Lexer {
     pub tokens: Vec<Token>,
     pub token_links: Vec<&'static str>,
     pub options: Options,
-    pub tokenizer: Tokenizer,
     pub inline_queue: Vec<InlineToken>,
-    pub state: State
+    pub state: State,
+    pub tokenizer: Tokenizer
 }
+
 
 #[derive(Clone, Debug)]
 pub struct InlineToken {
@@ -46,7 +49,7 @@ impl Lexer {
             tokens: vec![],
             token_links: vec![],
             options,
-            tokenizer: Tokenizer::new(Some(options), get_rules(options)),
+            tokenizer: Tokenizer::new(Some(options)),
             inline_queue: Default::default(),
             state: State {
                 in_link: false,
@@ -69,7 +72,9 @@ impl ILexer for Lexer {
         let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
         new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
 
-        self.block_tokens(new_src.as_str(), &mut vec![], "self");
+        let mut tokens: Vec<Token> = vec![];
+        self.block_tokens(new_src.as_str(), &mut tokens, "self");
+        self.tokens.append(&mut tokens);
 
         let mut next: InlineToken;
 
@@ -118,14 +123,11 @@ impl ILexer for Lexer {
                 if idx == 1 && tokens.len() > 0 {
                     // if there's a single \n as a spacer, it's terminating the last line,
                     // so move it there so that we don't get unnecessary paragraph tags
+
                     let t_idx = tokens.len() - 1;
                     tokens.get_mut(t_idx).unwrap().raw.push_str("\n");
                 } else {
-                    if opt == "self" {
-                        self.tokens.push(_token)
-                    } else {
-                        tokens.push(_token);
-                    }
+                    tokens.push(_token);
                 }
                 continue;
             }
@@ -155,19 +157,11 @@ impl ILexer for Lexer {
                         let q_idx = self.inline_queue.len() - 1;
                         self.inline_queue[q_idx].src = last_token.text.to_string();
                     } else {
-                        if opt == "self" {
-                            self.tokens.push(_token)
-                        } else {
-                            tokens.push(_token);
-                        }
+                        tokens.push(_token);
                     }
 
                 } else {
-                    if opt == "self" {
-                        self.tokens.push(_token)
-                    } else {
-                        tokens.push(_token);
-                    }
+                    tokens.push(_token);
                 }
                 continue;
             }
@@ -181,11 +175,7 @@ impl ILexer for Lexer {
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                if opt == "self" {
-                    self.tokens.push(_token)
-                } else {
-                    tokens.push(_token);
-                }
+                tokens.push(_token);
                 continue;
             }
 
@@ -197,13 +187,9 @@ impl ILexer for Lexer {
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), self.tokens.len());
+                self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), tokens.len());
 
-                if opt == "self" {
-                    self.tokens.push(_token)
-                } else {
-                    tokens.push(_token);
-                }
+                tokens.push(_token);
                 continue;
             }
 
@@ -215,11 +201,7 @@ impl ILexer for Lexer {
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                if opt == "self" {
-                    self.tokens.push(_token)
-                } else {
-                    tokens.push(_token);
-                }
+                tokens.push(_token);
                 continue;
             }
 
@@ -227,15 +209,15 @@ impl ILexer for Lexer {
             token = self.tokenizer.blockquote(_src.as_str());
             if token.is_some() {
                 println!("Entered Blockquote Block");
-                let _token = token.unwrap();
+                let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                if opt == "self" {
-                    self.tokens.push(_token)
-                } else {
-                    tokens.push(_token);
-                }
+                let mut block_tokens: Vec<Token> = vec![];
+                self.block_tokens(_token.text.as_str(), &mut block_tokens, "");
+                _token.tokens = block_tokens;
+
+                tokens.push(_token);
                 continue;
             }
 
@@ -247,11 +229,7 @@ impl ILexer for Lexer {
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                if opt == "self" {
-                    self.tokens.push(_token)
-                } else {
-                    tokens.push(_token);
-                }
+                tokens.push(_token);
                 continue;
             }
 
@@ -264,11 +242,7 @@ impl ILexer for Lexer {
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                if opt == "self" {
-                    self.tokens.push(_token)
-                } else {
-                    tokens.push(_token);
-                }
+                tokens.push(_token);
                 continue;
             }
 
@@ -310,18 +284,30 @@ impl ILexer for Lexer {
 
 
             // table (gfm)
-            token = self.tokenizer.table(_src.as_str());
+            let mut inline_tokens = &mut vec![];
+            token = self.tokenizer.table(_src.as_str(), inline_tokens, tokens.len());
             if token.is_some() {
                 println!("Entered Table (GFM) Block");
-                let _token = token.unwrap();
+                // Process inline tokens for headers and rows
+                let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                if opt == "self" {
-                    self.tokens.push(_token)
-                } else {
-                    tokens.push(_token);
+                let mut l = _token.header.len();
+                for j in 0..l {
+                    let tokens = self.inline_tokens(_token.header[j].text.as_str(), vec![]);
+                    _token.header[j].tokens = tokens;
                 }
+
+                l = _token.rows.len();
+                for j in 0..l {
+                    for k in 0.._token.rows[j].len() {
+                        let tokens = self.inline_tokens(_token.rows[j][k].text.as_str(), vec![]);
+                        _token.rows[j][k].tokens = tokens;
+                    }
+                }
+                println!("{}", _src);
+                tokens.push(_token);
                 continue;
             }
 
@@ -333,13 +319,9 @@ impl ILexer for Lexer {
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), self.tokens.len());
+                self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), tokens.len());
 
-                if opt == "self" {
-                    self.tokens.push(_token)
-                } else {
-                    tokens.push(_token);
-                }
+                tokens.push(_token);
                 continue;
             }
 
@@ -357,7 +339,7 @@ impl ILexer for Lexer {
             {
                 println!("Entered Paragraph Block");
                 let _token = token.unwrap();
-                self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), self.tokens.len());
+                self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), tokens.len());
 
                 let idx = _token.raw.len();
 
@@ -367,8 +349,8 @@ impl ILexer for Lexer {
                     last_token = _last_token.clone();
 
                     if last_paragraph_clipped &&
-                        last_token._type == "paragraph" {
-
+                        last_token._type == "paragraph"
+                    {
                         last_token.append_to_raw("\n");
                         last_token.append_to_raw(_token.raw.as_str());
 
@@ -380,18 +362,10 @@ impl ILexer for Lexer {
                         let q_idx = self.inline_queue.len() - 1;
                         self.inline_queue.get_mut(q_idx).unwrap().src = last_token.text.to_string();
                     } else {
-                        if opt == "self" {
-                            self.tokens.push(_token)
-                        } else {
-                            tokens.push(_token);
-                        }
-                    }
-                } else {
-                    if opt == "self" {
-                        self.tokens.push(_token)
-                    } else {
                         tokens.push(_token);
                     }
+                } else {
+                    tokens.push(_token);
                 }
 
                 last_paragraph_clipped = cut_src.len() != _src.len();
@@ -409,7 +383,7 @@ impl ILexer for Lexer {
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), self.tokens.len());
+                self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), tokens.len());
 
                 if tokens.len() > 0 {
                     let t_idx = tokens.len() - 1;
@@ -428,18 +402,10 @@ impl ILexer for Lexer {
                         let q_idx = self.inline_queue.len() - 1;
                         self.inline_queue[q_idx].src = last_token.text.to_string();
                     } else {
-                        if opt == "self" {
-                            self.tokens.push(_token)
-                        } else {
-                            tokens.push(_token);
-                        }
-                    }
-                } else {
-                    if opt == "self" {
-                        self.tokens.push(_token)
-                    } else {
                         tokens.push(_token);
                     }
+                } else {
+                    tokens.push(_token);
                 }
 
                 continue;
@@ -458,7 +424,6 @@ impl ILexer for Lexer {
             }
         }
         self.state.top = true;
-        // return tokens;
     }
 
     fn inline_tokens(&mut self, src: &str, mut tokens: Vec<Token>) -> Vec<Token> {
@@ -699,7 +664,6 @@ impl ILexer for Lexer {
                     panic!("{}", err_msg);
                 }
             }
-            // count += 1;
         }
         return tokens;
     }
