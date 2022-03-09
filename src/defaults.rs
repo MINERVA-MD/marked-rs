@@ -78,6 +78,10 @@ impl Options {
         self = new_defaults;
     }
 
+    pub fn enable_sanitize(&mut self) {
+        self.sanitize = true;
+    }
+
 }
 
 impl Copy for Options {

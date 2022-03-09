@@ -197,8 +197,8 @@ impl Block {
         }
     }
 
-    pub fn exec<'a>(&self, src: &'a str, rule: MDBlock) -> Option<regex::Captures<'a>> {
-        self.get_grammar_regex(rule, None).captures(src)
+    pub fn exec<'a>(&self, src: &'a str, rule: MDBlock, opt: Option<&'a str>) -> Option<regex::Captures<'a>> {
+        self.get_grammar_regex(rule, opt).captures(src)
     }
 
 
@@ -226,8 +226,8 @@ impl Block {
         }
     }
 
-    pub fn exec_fc<'a>(&self, src: &'a str, rule: MDBlock) -> Option<fancy_regex::Captures<'a>> {
-        self.get_grammar_fc_regex(rule, None).captures(src).unwrap()
+    pub fn exec_fc<'a>(&self, src: &'a str, rule: MDBlock, opt: Option<&'a str>) -> Option<fancy_regex::Captures<'a>> {
+        self.get_grammar_fc_regex(rule, opt).captures(src).unwrap()
     }
 }
 
@@ -294,7 +294,11 @@ impl Inline {
             MDInline::RefLink           => regex::Regex::new(self.ref_link.as_str()).unwrap(),
             MDInline::NoLink            => regex::Regex::new(self.no_link.as_str()).unwrap(),
             MDInline::RefLinkSearch     => regex::Regex::new(self.ref_link_search.as_str()).unwrap(),
-            MDInline::EmStrong          => regex::Regex::new("").unwrap(),
+            MDInline::EmStrong          => {
+                return if opt.unwrap() == "l_delim"     { regex::Regex::new(self.em_strong.l_delim.as_str()).unwrap() }
+                else if opt.unwrap() == "r_delim_ast"   { regex::Regex::new(self.em_strong.r_delim_ast.as_str()).unwrap() }
+                else                                    { regex::Regex::new(self.em_strong.r_delim_und.as_str()).unwrap() }
+            },
             MDInline::Code              => regex::Regex::new(self.code.as_str()).unwrap(),
             MDInline::Br                => regex::Regex::new(self.br.as_str()).unwrap(),
             MDInline::Del               => regex::Regex::new(self.del.as_str()).unwrap(),
@@ -339,7 +343,11 @@ impl Inline {
             MDInline::RefLink           => fancy_regex::Regex::new(self.ref_link.as_str()).unwrap(),
             MDInline::NoLink            => fancy_regex::Regex::new(self.no_link.as_str()).unwrap(),
             MDInline::RefLinkSearch     => fancy_regex::Regex::new(self.ref_link_search.as_str()).unwrap(),
-            MDInline::EmStrong          => fancy_regex::Regex::new("").unwrap(),
+            MDInline::EmStrong          => {
+                return if opt.unwrap() == "l_delim"     { fancy_regex::Regex::new(self.em_strong.l_delim.as_str()).unwrap() }
+                else if opt.unwrap() == "r_delim_ast"   { fancy_regex::Regex::new(self.em_strong.r_delim_ast.as_str()).unwrap() }
+                else                                    { fancy_regex::Regex::new(self.em_strong.r_delim_und.as_str()).unwrap() }
+            },
             MDInline::Code              => fancy_regex::Regex::new(self.code.as_str()).unwrap(),
             MDInline::Br                => fancy_regex::Regex::new(self.br.as_str()).unwrap(),
             MDInline::Del               => fancy_regex::Regex::new(self.del.as_str()).unwrap(),
@@ -374,12 +382,12 @@ impl Inline {
         }
     }
 
-    pub fn exec<'a>(&self, src: &'a str, rule: MDInline) -> Option<regex::Captures<'a>> {
-        self.get_grammar_regex(rule, None).captures(src)
+    pub fn exec<'a>(&self, src: &'a str, rule: MDInline, opt: Option<&'a str>) -> Option<regex::Captures<'a>> {
+        self.get_grammar_regex(rule, opt).captures(src)
     }
 
-    pub fn exec_fc<'a>(&self, src: &'a str, rule: MDInline) -> Option<Captures<'a>> {
-        self.get_grammar_fc_regex(rule, None).captures(src).unwrap()
+    pub fn exec_fc<'a>(&self, src: &'a str, rule: MDInline, opt: Option<&'a str>) -> Option<Captures<'a>> {
+        self.get_grammar_fc_regex(rule, opt).captures(src).unwrap()
     }
 }
 

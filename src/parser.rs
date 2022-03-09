@@ -39,10 +39,10 @@ impl IParser for Parser {
         let mut item: &str = "";
         let mut cell: &str = "";
         let mut header: &str = "";
-        let mut start: u32 = 0;
+        let mut start: i32 = 0;
         let mut checked: bool = false;
         let mut loose: bool = false;
-        let mut ordered: &str = "";
+        let mut ordered: bool = false;
         let mut body: String= "".to_string();
 
         let l = tokens.len();
@@ -104,7 +104,7 @@ impl IParser for Parser {
                 }
 
                 "list"      => {
-                    ordered = token.ordered.as_str();
+                    ordered = token.ordered;
                     start = token.start;
                     loose = token.loose;
                     l2 = token.items.len();

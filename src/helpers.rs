@@ -166,11 +166,11 @@ pub fn rtrim(_str: &str, c: &str, invert: bool) -> String {
 }
 
 pub fn find_closing_bracket(_str: &str, b: &str) -> i32 {
-    todo!()
+    return -1
 }
 
-pub fn repeat_string(pattern: &str, count: i32) -> String {
-    todo!()
+pub fn repeat_string(pattern: &str, count: usize) -> String {
+    pattern.repeat(count)
 }
 
 pub fn check_sanitize_deprecation(opt: &str) {
