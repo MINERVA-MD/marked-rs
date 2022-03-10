@@ -162,7 +162,7 @@ pub fn resolve_url(base: &str, href: &str) -> String {
 }
 
 pub fn rtrim(_str: &str, c: &str, invert: bool) -> String {
-    todo!()
+    return String::from(_str.trim_end())
 }
 
 pub fn find_closing_bracket(_str: &str, b: &str) -> i32 {

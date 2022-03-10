@@ -1,6 +1,7 @@
 use std::{fmt, fs};
 use std::cmp::min;
 use std::fmt::Formatter;
+use std::ops::Range;
 use fancy_regex::Captures;
 use regex::Regex;
 use crate::defaults::Options;
@@ -33,7 +34,7 @@ pub struct Token {
     pub code_block_style: String
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Link {
     pub href: String,
     pub title: String,
@@ -385,7 +386,6 @@ impl ITokenizer for Tokenizer {
 
         if list_caps.is_some() {
 
-            let mut _raw = String::from("");
             let mut blank_line = false;
             let mut indent:usize  = 0;
             let mut is_checked = false;
@@ -393,19 +393,19 @@ impl ITokenizer for Tokenizer {
             let mut item_contents = String::from("");
 
             let mut caps = list_caps.unwrap();
-            let mut raw = caps.get(0).map_or("", |m| m.as_str());
             let mut cap1 = caps.get(1).map_or("", |m| m.as_str());
 
             let mut bull = cap1.trim().to_string();
             let is_ordered = bull.len() > 1;
 
             let start: i32 = if is_ordered {
-                let num = &bull[0..bull.len() - 1].to_string();
+                let num = slice(bull.as_str(), 0..bull.len() - 1).to_string();
                 num.parse().unwrap()
             } else {
                 // TODO: May need to change this to be "" or an Option
                 0
             };
+
 
             let mut list = Token {
                 _type: "list",
@@ -445,7 +445,6 @@ impl ITokenizer for Tokenizer {
                 }
             }
 
-
             let list_re_str = String::from(format!(r#"^( {{0,3}}{})((?: [^\n]*)?(?:\n|$))"#, bull));
 
             // Get next list item
@@ -453,6 +452,7 @@ impl ITokenizer for Tokenizer {
 
             // Check if current bullet point can start a new List Item
             let mut end_early: bool = false;
+            let mut raw: String = String::from("");
 
             while _src.len() > 0 {
 
@@ -462,7 +462,6 @@ impl ITokenizer for Tokenizer {
 
                 if item_caps.is_none() { break; }
 
-
                 if self.rules.block.get_grammar_fc_regex(MDBlock::Hr, None)
                     .is_match(_src.as_str()).unwrap()
                 {
@@ -471,19 +470,24 @@ impl ITokenizer for Tokenizer {
                 }
 
                 let _caps = item_caps.unwrap();
-                _raw = _caps.get(0).map_or("", |m| m.as_str()).to_string();
+
+                raw = _caps.get(0).map_or("", |m| m.as_str()).to_string();
                 let _cap1 = _caps.get(1).map_or("", |m| m.as_str());
                 let _cap2 = _caps.get(2).map_or("", |m| m.as_str());
 
-                _src = String::from(&_src[_raw.len()..]);
+                _src = String::from(&_src[raw.len()..]);
 
-                let lines: Vec<String> = _cap2.splitn(1, "\n")
+                let mut lines: Vec<String> = _cap2.splitn(2,"\n")
                     .map(|x| x.to_string())
                     .collect();
 
-                let next_lines: Vec<String> = _src.splitn(1, "\n")
+                lines = vec![lines[0].clone()];
+
+                let mut next_lines: Vec<String> = _src.splitn(2,"\n")
                     .map(|x| x.to_string())
                     .collect();
+
+                next_lines = vec![next_lines[0].clone()];
 
                 let mut line = String::from(lines.get(0).unwrap());
                 let mut next_line = String::from(next_lines.get(0).unwrap());
@@ -506,7 +510,7 @@ impl ITokenizer for Tokenizer {
                 if line == "" && regx(r#"^ *$"#)
                     .is_match(next_line.as_ref())
                 {
-                    _raw = format!("{}{}\n", raw.to_string(), next_line);
+                    raw = format!("{}{}\n", raw.to_string(), next_line);
                     _src = String::from(&_src[next_line.len()..]);
                     end_early = true;
                 }
@@ -517,7 +521,7 @@ impl ITokenizer for Tokenizer {
 
                     // Check if following lines should be included in List Item
                     while _src.len() > 0 {
-                        let raw_lines : Vec<String> = _src.splitn(1, "\n")
+                        let raw_lines : Vec<String> = _src.splitn(2, "\n")
                             .map(|x| x.to_string())
                             .collect();
 
@@ -537,20 +541,26 @@ impl ITokenizer for Tokenizer {
                             break;
                         }
 
-                        let line_search_idx = regx(r#"[^ ]"#)
-                            .find(line.as_str())
-                            .unwrap()
-                            .start();
+                        let line_search_match = regx(r#"[^ ]"#)
+                            .find(line.as_str());
 
-                        if line_search_idx >= indent ||
+                        let line_search_idx = if line_search_match.is_some() {
+                            line_search_match
+                            .unwrap().start() as i32
+                        } else {
+                            -1
+                        };
+
+                        if line_search_idx >= indent as i32 ||
                             line.trim().is_empty()
                         { // Dedent if possible
-                            item_contents = format!("{}\n{}", item_contents, &line[indent..]);
+                            item_contents = format!("{}\n{}", item_contents, slice(line.as_str(), indent..line.len()));
                         } else if !blank_line{ // Until blank line, item doesn't need indentation
-                            item_contents = format!("{}\n{}", item_contents, line)
+                            item_contents = format!("{}\n{}", item_contents, line);
                         } else { // Otherwise, improper indentation ends this item
-                            break
+                            break;
                         }
+
 
                         if !blank_line &&
                             line.trim().is_empty()
@@ -558,8 +568,15 @@ impl ITokenizer for Tokenizer {
                             blank_line = true;
                         }
 
-                        _raw = format!("{}\n", raw_line);
-                        _src = String::from(&_src[raw_line.len() + 1..]);
+                        raw = format!("{}{}\n", raw, raw_line);
+
+                        // TODO: double check guard, place relevant guards at other substrings/slice
+                        if raw_line.len() + 1 < _src.len() {
+                            _src = String::from(&_src[raw_line.len() + 1..]);
+                        } else {
+                            _src = "".to_string();
+                        }
+
                     }
                 }
 
@@ -567,7 +584,7 @@ impl ITokenizer for Tokenizer {
                     // If the previous item ended with a blank line, the list is loose
                     if ends_with_blank_line {
                         list.loose = true
-                    } else if regx(r#"\n *\n *$"#).is_match(_raw.as_str())
+                    } else if regx(r#"\n *\n *$"#).is_match(raw.as_str())
                     {
                         ends_with_blank_line = true;
                     }
@@ -587,7 +604,7 @@ impl ITokenizer for Tokenizer {
                     }
                 }
 
-                // TODO: Add is_task, check to Token
+                // TODO: Add is_task, checked to Token
                 list.items.push(Token {
                     _type: "list_item",
                     raw: raw.to_string(),
@@ -611,14 +628,15 @@ impl ITokenizer for Tokenizer {
                     code_block_style: "".to_string()
                 });
 
-                list.raw = format!("{}{}", list.raw, _raw);
+                list.raw = format!("{}{}", list.raw, raw);
             }
             // Do not consume newlines at end of final item. Alternatively, make itemRegex *start* with any newlines to simplify/speed up endsWithBlankLine logic
             let list_item_idx = list.items.len() - 1;
             let mut last_list_item = list.items.get_mut(list_item_idx).unwrap();
 
-            last_list_item.raw = String::from(_raw.trim_end());
+            last_list_item.raw = String::from(raw.trim_end());
             last_list_item.text = String::from(item_contents.trim_end());
+            list.raw = String::from(list.raw.trim_end());
 
             return Some(list);
         }
@@ -1027,6 +1045,7 @@ impl ITokenizer for Tokenizer {
             let caps = tag_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
 
+
             if !*in_link && regx(r#"(?i)^<a "#).is_match(raw) {
                 *in_link = true;
             } else if *in_link && regx(r#"(?i)^<\/a>"#).is_match(raw) {
@@ -1053,6 +1072,7 @@ impl ITokenizer for Tokenizer {
             } else {
                 raw.to_string()
             };
+
             return Some(Token{
                 _type,
                 raw: raw.to_string(),
@@ -1887,4 +1907,12 @@ pub fn indent_code_compensation(raw: &str, text: String) -> String {
         })
         .collect::<Vec<String>>()
         .join("\n");
+}
+
+pub fn slice(s: &str, range: Range<usize>) -> &str {
+    if s.len() > range.start && s.len() >= range.end {
+        &s[range]
+    } else {
+        ""
+    }
 }

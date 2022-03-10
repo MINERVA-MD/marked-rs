@@ -60,6 +60,10 @@ impl Lexer {
         }
     }
 
+    pub fn get_links(&mut self) -> Vec<Link> {
+        self.links.clone()
+    }
+
     pub fn _lex(src: &str, options: Options) -> Lexer  {
         let mut lexer = Lexer::new(options);
         lexer.lex(src);
@@ -189,7 +193,6 @@ impl ILexer for Lexer {
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                // self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), tokens.len());
                 let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
                 _token.tokens.append(&mut inline_tokens);
 
@@ -325,7 +328,7 @@ impl ILexer for Lexer {
 
                         let q_idx = self.inline_queue.len() - 1;
                         self.inline_queue[q_idx].src = last_token.text.to_string();
-                    } else if !link_idx.is_some()  {
+                    } else if link_idx.is_none()  {
                         self.links.push(Link {
                             href: _token.href.to_string(),
                             title: _token.title.to_string(),
@@ -333,7 +336,7 @@ impl ILexer for Lexer {
                         });
                     }
 
-                } else if !link_idx.is_some() {
+                } else if link_idx.is_none() {
                     self.links.push(Link {
                         href: _token.href.to_string(),
                         title: _token.title.to_string(),
@@ -447,8 +450,6 @@ impl ILexer for Lexer {
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                // self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), tokens.len());
-
                 let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
                 _token.tokens.append(&mut inline_tokens);
 
@@ -545,8 +546,6 @@ impl ILexer for Lexer {
                 }
 
             }
-
-
         }
 
         // Mask out other blocks
@@ -646,14 +645,14 @@ impl ILexer for Lexer {
                 if tokens.len() > 0 {
                     let t_idx = tokens.len() - 1;
 
-                    let _last_token = tokens.get_mut(t_idx).unwrap();
-                    last_token = _last_token.clone();
+                    let mut _last_token = tokens.get_mut(t_idx).unwrap();
 
-                    if _token._type == "text" ||
-                        last_token._type == "text"
+                    if _token._type == "text" &&
+                        _last_token._type == "text"
                     {
-                        last_token.append_to_raw(_token.raw.as_str());
-                        last_token.append_to_raw(_token.text.as_str());
+                        _last_token.append_to_raw(_token.raw.as_str());
+                        _last_token.append_to_text(_token.text.as_str());
+
                     } else {
                         tokens.push(_token);
                     }
@@ -691,17 +690,21 @@ impl ILexer for Lexer {
                 println!("Inside Reflink/Nolink");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
-                let t_idx = tokens.len() - 1;
 
-                let _last_token = tokens.get(t_idx).unwrap();
-                last_token = _last_token.clone();
                 _src = String::from(&_src[idx..]);
 
-                if _token._type == "text" ||
-                    last_token._type == "text"
-                {
-                    last_token.append_to_raw(_token.raw.as_str());
-                    last_token.append_to_raw(_token.text.as_str());
+                if tokens.len() > 0 {
+                    let t_idx = tokens.len() - 1;
+                    let _last_token = tokens.get_mut(t_idx).unwrap();
+
+                    if _token._type == "text" ||
+                        _last_token._type == "text"
+                    {
+                        _last_token.append_to_raw(_token.raw.as_str());
+                        _last_token.append_to_text(_token.text.as_str());
+                    } else {
+                        tokens.push(_token);
+                    }
                 } else {
                     tokens.push(_token);
                 }
@@ -813,12 +816,11 @@ impl ILexer for Lexer {
 
                     _keep_prev_char = true;
                     let _last_token = tokens.get_mut(t_idx).unwrap();
-                    last_token = _last_token.clone();
 
                     if _last_token._type == "text"
                     {
-                        last_token.append_to_raw(_token.raw.as_str());
-                        last_token.append_to_raw(_token.text.as_str());
+                        _last_token.append_to_raw(_token.raw.as_str());
+                        _last_token.append_to_text(_token.text.as_str());
                     } else {
                         tokens.push(_token);
                     }
