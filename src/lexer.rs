@@ -509,11 +509,21 @@ impl ILexer for Lexer {
         // Mask out reflinks
         if self.links.len() > 0 {
             println!("Entered Inline Reflinks Masking");
-
+            let mut end_idx = 0;
             loop {
                 let match_caps = self.tokenizer.rules.inline.exec_fc(_masked_src.as_str(), MDInline::RefLinkSearch, None);
                 if match_caps.is_some() {
+
+                    // println!("{:#?}", match_caps);
                     let caps = match_caps.unwrap();
+                    let end = caps.get(0).unwrap().end();
+
+                    if end == end_idx {
+                        break;
+                    } else {
+                        end_idx = end;
+                    }
+
                     let match0 = caps.get(0).map_or("", |m| m.as_str());
                     let link_match = match0.rfind('[');
 
@@ -547,6 +557,7 @@ impl ILexer for Lexer {
 
             }
         }
+
 
         // Mask out other blocks
         loop {
@@ -688,10 +699,17 @@ impl ILexer for Lexer {
             token = self.tokenizer.ref_link(_src.as_str(), &self.links);
             if token.is_some() {
                 println!("Inside Reflink/Nolink");
-                let _token = token.unwrap();
+                let mut _token = token.unwrap();
                 let idx = _token.raw.len();
-
                 _src = String::from(&_src[idx..]);
+
+                // Add tokens here
+                if _token._type == "link" {
+                    self.state.in_link = true;
+                    let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
+                    _token.tokens.append(&mut inline_tokens);
+                    self.state.in_link = false;
+                }
 
                 if tokens.len() > 0 {
                     let t_idx = tokens.len() - 1;
@@ -798,7 +816,8 @@ impl ILexer for Lexer {
             }
 
             // Inline Text
-            token = self.tokenizer.inline_text(_cut_src.as_str(), smartypants);
+            let in_raw_block = self.state.in_raw_block.clone();
+            token = self.tokenizer.inline_text(_cut_src.as_str(), in_raw_block, smartypants);
             if token.is_some() {
                 println!("Entered Inline Text");
                 let _token = token.unwrap();

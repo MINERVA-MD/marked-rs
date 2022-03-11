@@ -10,7 +10,7 @@ use crate::rules::{get_rules, MDBlock, MDInline, Rules};
 use crate::lexer::{ILexer, InlineToken, Lexer, regx};
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Token {
     pub _type: &'static str,
     pub raw: String,
@@ -27,6 +27,10 @@ pub struct Token {
     pub depth: usize,
     pub escaped: bool,
     pub pre: bool,
+    pub task: bool,
+    pub checked: bool,
+    pub in_link: bool,
+    pub in_raw_block: bool,
     pub links: Vec<Link>,
     pub align: Vec<String>,
     pub rows: Vec<Vec<Token>>,
@@ -60,6 +64,10 @@ impl Token {
             depth: 0,
             escaped: false,
             pre: false,
+            task: false,
+            checked: false,
+            in_link: false,
+            in_raw_block: false,
             links: vec![],
             align: vec![],
             rows: vec![],
@@ -77,7 +85,8 @@ impl Token {
 
 }
 
-impl fmt::Debug for Token {
+
+impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "\n\tType: {:?} \n\tRaw: {:?} \n\tHref: {:?} \n\tTitle: {:?} \
         \n\tText: {:?} \n\tTokens: {:?} \n\tTag: {:?} \n\tOrdered: {:?} \
@@ -121,7 +130,7 @@ pub trait ITokenizer {
     fn del(&mut self, src: &str) -> Option<Token>;
     fn autolink(&mut self, src: &str, mangle: fn(text: &str) -> String) -> Option<Token>;
     fn url(&mut self, src: &str, mangle: fn(text: &str) -> String) -> Option<Token>;
-    fn inline_text(&mut self, src: &str, smartypants : fn(text: &str) -> String) -> Option<Token>;
+    fn inline_text(&mut self, src: &str, in_raw_block: bool, smartypants : fn(text: &str) -> String) -> Option<Token>;
 }
 
 type InlineTokenCallback = fn(&mut Lexer, src: String, tokens: Vec<Token>, parent_block_idx: usize);
@@ -172,6 +181,10 @@ impl ITokenizer for Tokenizer {
                     depth: 0,
                     escaped: false,
                     pre: false,
+                    task: false,
+                    checked: false,
+                    in_link: false,
+                    in_raw_block: false,
                     links: vec![],
                     align: vec![],
                     rows: vec![],
@@ -209,6 +222,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -251,6 +268,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -298,6 +319,10 @@ impl ITokenizer for Tokenizer {
                 depth,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -335,6 +360,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -369,6 +398,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -386,6 +419,7 @@ impl ITokenizer for Tokenizer {
 
         if list_caps.is_some() {
 
+            let mut is_task = false;
             let mut blank_line = false;
             let mut indent:usize  = 0;
             let mut is_checked = false;
@@ -423,6 +457,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -594,17 +632,20 @@ impl ITokenizer for Tokenizer {
                 if self.options.gfm {
                     let is_task_caps = regx(r#"^\[[ xX]\] "#).captures(item_contents.as_str());
                     if is_task_caps.is_some() {
+                        is_task = true;
+
                         let task_caps = is_task_caps.unwrap();
                         let is_task0 = task_caps.get(0).map_or("", |m| m.as_str()).to_string();
 
-                        is_checked = is_task0 == "[ ] ";
+                        is_checked = is_task0 != "[ ] ";
                         item_contents = regx(r#"^\[[ xX]\] +"#)
                             .replace(item_contents.as_str(), "")
                             .to_string()
+                    } else {
+                        is_task = false;
                     }
                 }
 
-                // TODO: Add is_task, checked to Token
                 list.items.push(Token {
                     _type: "list_item",
                     raw: raw.to_string(),
@@ -621,6 +662,10 @@ impl ITokenizer for Tokenizer {
                     depth: 0,
                     escaped: false,
                     pre: false,
+                    task: is_task,
+                    checked: is_checked,
+                    in_link: false,
+                    in_raw_block: false,
                     links: vec![],
                     align: vec![],
                     rows: vec![],
@@ -672,6 +717,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -725,6 +774,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -765,6 +818,10 @@ impl ITokenizer for Tokenizer {
                         depth: 0,
                         escaped: false,
                         pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
                         links: vec![],
                         align: vec![],
                         rows: vec![],
@@ -830,6 +887,10 @@ impl ITokenizer for Tokenizer {
                                 depth: 0,
                                 escaped: false,
                                 pre: false,
+                                task: false,
+                                checked: false,
+                                in_link: false,
+                                in_raw_block: false,
                                 links: vec![],
                                 align: vec![],
                                 rows: vec![],
@@ -872,6 +933,10 @@ impl ITokenizer for Tokenizer {
                     depth: 0,
                     escaped: false,
                     pre: false,
+                    task: false,
+                    checked: false,
+                    in_link: false,
+                    in_raw_block: false,
                     links: vec![],
                     align,
                     rows,
@@ -916,6 +981,10 @@ impl ITokenizer for Tokenizer {
                 depth,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -958,6 +1027,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -992,6 +1065,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -1029,6 +1106,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -1089,6 +1170,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -1101,6 +1186,7 @@ impl ITokenizer for Tokenizer {
 
     fn link(&mut self, src: &str) -> Option<Token> {
         let link_caps = self.rules.inline.exec_fc(src, MDInline::Link, None);
+
         if link_caps.is_some() {
             let caps = link_caps.unwrap();
             let mut raw = caps.get(0).map_or("", |m| m.as_str());
@@ -1111,7 +1197,7 @@ impl ITokenizer for Tokenizer {
             let trimmed_url = cap2.trim();
             if !self.options.pedantic && regx(r#"^<"#).is_match(trimmed_url) {
                 // commonmark requires matching angle brackets
-                if !regx(r#">$"#).is_match(trimmed_url){
+                if !regx(r#">$"#).is_match(trimmed_url) {
                     return None;
                 }
             }
@@ -1155,7 +1241,8 @@ impl ITokenizer for Tokenizer {
                     let link3 = caps.get(3).map_or("", |m| m.as_str());
                     _href = link1;
                     _title = link3;
-                } else {
+                }
+            } else {
                     _title = if !cap3.is_empty() {
                         &cap3[1..cap3.len()  - 1]
                     } else {
@@ -1197,13 +1284,12 @@ impl ITokenizer for Tokenizer {
                 let token = output_link(caps, link, raw.to_string());
                 return Some(token);
                 // Set inline tokens for token.tokens see output_link (original)
-            }
         }
         None
     }
 
     fn ref_link(&mut self, src: &str, mut links: &Vec<Link>) -> Option<Token> {
-        let ref_link_caps = self.rules.inline.exec_fc(src, MDInline::Link, None);
+        let ref_link_caps = self.rules.inline.exec_fc(src, MDInline::RefLink, None);
         let no_link_caps = self.rules.inline.exec_fc(src, MDInline::NoLink, None);
 
         if ref_link_caps.is_some() ||
@@ -1227,7 +1313,7 @@ impl ITokenizer for Tokenizer {
 
             let link_idx = links.iter().position(|l| l.tag == link.to_lowercase());
 
-            if link_idx.is_none() {
+            if link_idx.is_none()  {
                 let text = raw.chars().nth(0).unwrap().to_string();
                 return Some(Token {
                     _type: "text",
@@ -1245,6 +1331,10 @@ impl ITokenizer for Tokenizer {
                     depth: 0,
                     escaped: false,
                     pre: false,
+                    task: false,
+                    checked: false,
+                    in_link: false,
+                    in_raw_block: false,
                     links: vec![],
                     align: vec![],
                     rows: vec![],
@@ -1274,6 +1364,10 @@ impl ITokenizer for Tokenizer {
                     depth: 0,
                     escaped: false,
                     pre: false,
+                    task: false,
+                    checked: false,
+                    in_link: false,
+                    in_raw_block: false,
                     links: vec![],
                     align: vec![],
                     rows: vec![],
@@ -1288,6 +1382,7 @@ impl ITokenizer for Tokenizer {
                 title: link_ref.title.clone(),
                 tag: link_ref.tag.clone()
             };
+
             let token = output_link(caps, link, raw.to_string());
             return Some(token);
         }
@@ -1429,6 +1524,10 @@ impl ITokenizer for Tokenizer {
                             depth: 0,
                             escaped: false,
                             pre: false,
+                            task: false,
+                            checked: false,
+                            in_link: false,
+                            in_raw_block: false,
                             links: vec![],
                             align: vec![],
                             rows: vec![],
@@ -1460,6 +1559,10 @@ impl ITokenizer for Tokenizer {
                         depth: 0,
                         escaped: false,
                         pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
                         links: vec![],
                         align: vec![],
                         rows: vec![],
@@ -1508,6 +1611,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -1541,6 +1648,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -1584,6 +1695,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -1641,6 +1756,10 @@ impl ITokenizer for Tokenizer {
                         depth: 0,
                         escaped: false,
                         pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
                         links: vec![],
                         align: vec![],
                         rows: vec![],
@@ -1657,6 +1776,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -1687,10 +1810,10 @@ impl ITokenizer for Tokenizer {
                 href = format!("mailto:{}", text);
             } else {
                 // do extended autolink path validation
-                let mut prev_cap_zero = "".to_string();
+                let mut prev_cap_zero = raw.to_string().clone();
 
                 loop {
-                    prev_cap_zero = raw.to_string();
+                    prev_cap_zero = raw.to_string().clone();
                     let backpedal_caps = self.rules.inline.exec_fc(raw, MDInline::Backpedal, None);
                     if backpedal_caps.is_some() {
                         let caps = backpedal_caps.unwrap();
@@ -1698,7 +1821,7 @@ impl ITokenizer for Tokenizer {
                     } else {
                         break;
                     }
-                    if prev_cap_zero != raw { break; }
+                    if prev_cap_zero == raw { break; }
                 }
 
                 text = escape(raw, false);
@@ -1730,6 +1853,10 @@ impl ITokenizer for Tokenizer {
                     depth: 0,
                     escaped: false,
                     pre: false,
+                    task: false,
+                    checked: false,
+                    in_link: false,
+                    in_raw_block: false,
                     links: vec![],
                     align: vec![],
                     rows: vec![],
@@ -1745,6 +1872,10 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -1755,20 +1886,16 @@ impl ITokenizer for Tokenizer {
         None
     }
 
-    fn inline_text(&mut self, src: &str, smartypants: fn(&str) -> String) -> Option<Token> {
+    fn inline_text(&mut self, src: &str, in_raw_block: bool, smartypants: fn(&str) -> String) -> Option<Token> {
         let inline_caps = self.rules.inline.exec_fc(src, MDInline::Text, None);
 
         if inline_caps.is_some() {
-            let lexer = Lexer::new(self.options);
             let caps = inline_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
-            let cap1 = caps.get(1).map_or("", |m| m.as_str());
-
-
             let mut text = "".to_string();
 
             // TODO: Move this to inside lexer
-            if lexer.state.in_raw_block {
+            if in_raw_block {
                 text = if self.options.sanitize {
                     if self.options.sanitizer.is_some() {
                         (self.options.sanitizer.unwrap())(raw)
@@ -1788,7 +1915,8 @@ impl ITokenizer for Tokenizer {
                 text = escape(html.as_str(), false);
             }
 
-            let token = Token {
+            let token =
+                Token {
                 _type: "text",
                 raw: raw.to_string(),
                 href: "".to_string(),
@@ -1804,7 +1932,11 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
-                links: vec![],
+                    task: false,
+                    checked: false,
+                    in_link: false,
+                    in_raw_block,
+                    links: vec![],
                 align: vec![],
                 rows: vec![],
                 header: vec![],
@@ -1822,7 +1954,12 @@ pub fn output_link(caps: Captures, link: Link, raw: String) -> Token {
     let cap1=  caps.get(1).map_or("", |m| m.as_str());
 
     let href = link.href.to_string();
-    let title = if link.title == "" {escape(link.title.as_str(), false).to_string()} else {"".to_string()};
+    let title = if link.title.len() > 0 {
+        escape(link.title.as_str(), false).to_string()
+    } else {
+        "".to_string()
+    };
+
     let text = regx(r#"\\([\[\]])"#).replace_all(cap1, "${1}");
 
     if cap0.chars().nth(0).unwrap() != '!' {
@@ -1842,6 +1979,10 @@ pub fn output_link(caps: Captures, link: Link, raw: String) -> Token {
             depth: 0,
             escaped: false,
             pre: false,
+            task: false,
+            checked: false,
+            in_link: false,
+            in_raw_block: false,
             links: vec![],
             align: vec![],
             rows: vec![],
@@ -1866,6 +2007,10 @@ pub fn output_link(caps: Captures, link: Link, raw: String) -> Token {
             depth: 0,
             escaped: false,
             pre: false,
+            task: false,
+            checked: false,
+            in_link: false,
+            in_raw_block: false,
             links: vec![],
             align: vec![],
             rows: vec![],
