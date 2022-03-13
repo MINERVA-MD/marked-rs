@@ -294,6 +294,30 @@ pub fn rtrim(_str: &str, c: &str, invert: bool) -> String {
 }
 
 pub fn find_closing_bracket(_str: &str, b: &str) -> i32 {
+    if _str.find(b.chars().nth(0).unwrap()).is_none() {
+        return -1;
+    }
+
+    let l = _str.len();
+    let mut level: usize = 0;
+    let mut i: usize = 0;
+
+    while i < l {
+        if _str.chars().nth(i).unwrap().to_string() == "\\" {
+            i += 1;
+        } else if _str.chars().nth(i).unwrap().to_string() ==
+            b.chars().nth(0).unwrap().to_string()
+        {
+            level += 1;
+        } else if _str.chars().nth(i).unwrap().to_string() ==
+            b.chars().nth(1).unwrap().to_string()
+        {
+            level -= 1;
+            if level < 0 {
+                return i as i32;
+            }
+        }
+    }
     return -1
 }
 
