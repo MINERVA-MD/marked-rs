@@ -1,7 +1,8 @@
 # Based on https://github.com/actions-rs/meta/blob/master/recipes/quickstart.md
 
-push:
-  branches: [main]
+on:
+  push:
+    branches: [main]
 
 name: Marked-rs Build
 
