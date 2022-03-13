@@ -14,15 +14,16 @@ impl Slugger {
     }
 
     pub fn serialize(value: &str) -> String {
-        let html_re = regx(r#"(?i)<[!\/a-z].*?>"#);
-        let chars_re = regx(r##"[\-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,./:;<=>?@[\]^`{|}~]"##);
+        // TODO: Not sure about how these regexes are escaped; double check regex docs
+        let html_re = regx("(?i)<[!\\\\/a-z].*?>");
+        let chars_re = regx(r#"[\u2000-\u206F\u2E00-\u2E7F\\'!\\"\\#$%&()*+,./:;<=>?@\[\]^`\{|\}~]"#);
         let space_re = regx(r#"\s"#);
 
         let mut serialized_str= value.to_lowercase().trim().to_string();
 
         serialized_str = html_re.replace_all(serialized_str.as_str(), "").to_string();
         serialized_str = chars_re.replace_all(serialized_str.as_str(), "").to_string();
-        serialized_str = space_re.replace_all(serialized_str.as_str(),"").to_string();
+        serialized_str = space_re.replace_all(serialized_str.as_str(),"-").to_string();
 
         serialized_str
     }

@@ -24,8 +24,8 @@ impl Clone for Renderer {
 impl Copy for Renderer {}
 
 pub struct Flags {
-    header: &'static str,
-    align: &'static str
+    pub header: bool,
+    pub align: String
 }
 
 
@@ -35,7 +35,7 @@ pub trait IRenderer {
     fn html(&mut self, html: &str) -> String;
     fn heading(&mut self, text: &str, level: usize, raw: &str, slugger: &mut Slugger) -> String;
     fn hr(&mut self) -> String;
-    fn list(&mut self, body: &str, ordered: bool, start: u32) -> String;
+    fn list(&mut self, body: &str, ordered: bool, start: i32) -> String;
     fn list_item(&mut self, text: &str) -> String;
     fn checkbox(&mut self,checked: bool) -> String;
     fn paragraph(&mut self, text: &str) -> String;
@@ -58,7 +58,7 @@ impl IRenderer for Renderer {
     fn code(&mut self, mut code: &str, info_str: &str, mut escaped: bool) -> String {
 
         let mut _code = String::from(code);
-        let lang_caps = regx(r#"\S*"#).captures(info_str).unwrap();
+        let lang_caps = regx("\\S*").captures(info_str).unwrap();
         let lang = lang_caps.get(0).map_or("", |m| m.as_str());
 
         if self.options.is_highlight {
@@ -73,8 +73,7 @@ impl IRenderer for Renderer {
         _code = format!("{}\n", _code);
 
 
-
-        if lang != "" {
+        if lang.len() == 0 {
             return format!("<pre><code>{}</code></pre>\n",
                            if escaped { _code } else { escape(_code.as_str(), true) }
             );
@@ -119,7 +118,7 @@ impl IRenderer for Renderer {
         if self.options.xhtml { String::from("<hr/>\n") } else { String::from("<hr>\n") }
     }
 
-    fn list(&mut self, body: &str, ordered: bool, start: u32) -> String {
+    fn list(&mut self, body: &str, ordered: bool, start: i32) -> String {
         let _type = if ordered {"ol"} else {"ul"};
         let start_at = if ordered && start != 1 { format!(r#" start="{}""#, start) } else {"".to_string()};
         format!("<{}{}>\n{}</{}>\n",
@@ -145,27 +144,26 @@ impl IRenderer for Renderer {
         format!("<p>{}</p>\n", text)
     }
 
-
     fn table(&mut self, header: &str, body: &str) -> String {
         let mut _body = String::from(body);
         if _body != "" {
-            _body = format!("<tbody>{}</tbody>\n", body)
+            _body = format!("<tbody>{}</tbody>", body)
         }
 
         format!("<table>\n<thead>\n{}</thead>\n{}</table>\n",
                 header,
-                body
+                _body
         )
     }
 
     fn tablerow(&mut self, content: &str) -> String {
-        format!("<tr>{}</tr>\n", content)
+        format!("<tr>\n{}</tr>\n", content)
     }
 
     fn tablecell(&mut self, content: &str, flags: Flags) -> String {
-        let _type = if flags.header != "" {"th".to_string()} else {"td".to_string()};
+        let _type = if flags.header {"th".to_string()} else {"td".to_string()};
         let tag = if flags.align != "" {
-            format!(r#"<{} align="{}""#, _type, flags.align)
+            format!(r#"<{} align="{}">"#, _type, flags.align)
         } else {
             format!("<{}>", _type)
         };
@@ -180,7 +178,7 @@ impl IRenderer for Renderer {
 
     // Span Level Renderer
     fn strong(&mut self, text: &str) -> String {
-        format!("<strong>{}</strong>\n", text)
+        format!("<strong>{}</strong>", text)
     }
 
     fn em(&mut self, text: &str) -> String {
@@ -188,7 +186,7 @@ impl IRenderer for Renderer {
     }
 
     fn codespan(&mut self, text: &str) -> String {
-        format!("<code>{}</code>\n", text)
+        format!("<code>{}</code>", text)
     }
 
     fn br(&mut self) -> String {
@@ -196,13 +194,13 @@ impl IRenderer for Renderer {
     }
 
     fn del(&mut self, text: &str) -> String {
-        format!("<del>{}</del>\n", text)
+        format!("<del>{}</del>", text)
     }
 
     fn link(&mut self, href: &str, title: &str, text: &str) -> String {
         let _href = clean_url(self.options.sanitize, self.options.base_url, href);
 
-        if href == "" {
+        if _href == "" {
             return String::from(text);
         }
 
@@ -212,24 +210,29 @@ impl IRenderer for Renderer {
             out = format!(r#"{} title="{}""#, out, title);
         }
 
-        out = format!(r#"{}title{}""#, out, text);
+        out = format!("{}>{}</a>", out, text);
         out
     }
 
     fn image(&mut self, href: &str, title: &str, text: &str) -> String {
         let _href = clean_url(self.options.sanitize, self.options.base_url, href);
 
-        if href == "" {
+        if _href == "" {
             return String::from(text);
         }
 
-        let mut out = format!(r#"<img src="{}" alt="{}""#, href, text);
+        let mut out = format!(r#"<img src="{}" alt="{}""#, _href, text);
 
         if title != "" {
             out = format!(r#"{} title="{}""#, out, title);
         }
 
-        out = if self.options.xhtml {"/>".to_string()} else {">".to_string()};
+        out = if self.options.xhtml {
+            format!("{}{}", out, "/>".to_string())
+        } else {
+            format!("{}{}", out, ">".to_string())
+        };
+
         out
     }
 

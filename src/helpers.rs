@@ -1,8 +1,12 @@
 // Helpers
 use std::borrow::{Cow};
 use lazy_static::lazy_static;
+use serde::de::Unexpected::Str;
+use urlencoding::{encode, decode};
 use fancy_regex::{Captures, Regex};
+
 use crate::lexer::regx;
+use crate::tokenizer::slice;
 
 lazy_static! {
     static ref ESCAPE_TEST: Regex = Regex::new("[&<>\"']").unwrap();
@@ -79,7 +83,58 @@ pub fn unescape(html: &str) -> String {
 }
 
 pub fn clean_url(sanitize: bool, base: &str, href: &str) -> String {
-    todo!()
+
+    let mut _href = String::from(href);
+    let non_word_and_colon_re = regx(r#"[^\w:]"#);
+    let origin_independent_url = regx(r#"(?i)^$|^[a-z][a-z0-9+.-]*:|^[?#]"#);
+
+    if sanitize {
+        let mut prot = "".to_string();
+
+        let unescaped_str = unescape(_href.as_str());
+        let p = decode(unescaped_str.as_str());
+
+        match p {
+            Ok(proto_) => {
+                prot = non_word_and_colon_re
+                    .replace_all(proto_.to_string().as_str(), "")
+                    .to_string()
+                    .to_lowercase();
+            },
+            Err(error) => {
+                prot = "".to_string();
+            },
+        };
+
+        if (
+            prot.find("javascript:").is_some() &&
+                prot.find("javascript:").unwrap() == 0) ||
+            (
+                prot.find("vbscript:").is_some() &&
+                    prot.find("vbscript:").unwrap() == 0) ||
+            (
+                prot.find("data:").is_some() &&
+                    prot.find("data:").unwrap() == 0)
+        {
+            return "".to_string();
+        }
+    }
+
+    if base.len() > 0 &&
+        !origin_independent_url.is_match(href)
+    {
+        _href = resolve_url(base, _href.as_str());
+    }
+
+
+    let encoded_uri = encode(_href.as_str()).to_string();
+
+    // TODO: Note that encodeURI throws error when trying to encode surrogate
+    _href = regx("%25")
+        .replace_all(encoded_uri.as_str(), "%")
+        .to_string();
+
+    _href
 }
 
 pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
@@ -158,11 +213,84 @@ pub fn get_row(a: &str) -> String {
 }
 
 pub fn resolve_url(base: &str, href: &str) -> String {
-    todo!()
+
+    let mut _base = String::from(base);
+
+    let protocol_re = regx(r#"^([^:]+:)[\s\S]*$"#);
+    let just_domain_re = regx(r#"^[^:]+:\\/*[^/]*$"#);
+    let domain_re = regx(r#"^([^:]+:\\/*[^/]*)[\s\S]*$"#);
+
+    let mut base_url = String::from("");
+    let just_domain_caps = just_domain_re.captures(_base.as_str());
+
+    if just_domain_caps.is_some() {
+        base_url = format!("{}/", _base.clone());
+    } else {
+        base_url = rtrim(_base.as_str(), "/", true);
+    }
+
+    _base = format!(" {}", base_url);
+    let relative_base = _base.find(":");
+
+    return if slice(href, 0..2) == "//" {
+        if relative_base.is_none() {
+            return String::from(href);
+        }
+        let base_protocol_replaced = protocol_re
+            .replace(_base.as_str(), "${1}")
+            .to_string();
+        format!("{}{}",
+                base_protocol_replaced,
+                href
+        )
+    } else if href.chars().nth(0).is_some() &&
+        (href.chars().nth(0).unwrap().to_string() == "/")
+    {
+        if relative_base.is_none() {
+            return String::from(href);
+        }
+        let base_domain_replaced = domain_re
+            .replace(_base.as_str(), "${1}")
+            .to_string();
+        format!("{}{}",
+                base_domain_replaced,
+                href
+        )
+    } else {
+        format!("{}{}",
+                _base,
+                href
+        )
+    }
+
 }
 
 pub fn rtrim(_str: &str, c: &str, invert: bool) -> String {
-    return String::from(_str.trim_end())
+    let l = _str.len();
+
+    if l == 0 {
+        return "".to_string();
+    }
+
+    let mut suff_len: usize = 0;
+
+    while suff_len < l {
+        let curr_char = _str.chars().nth(l - suff_len - 1).unwrap().to_string();
+
+        if curr_char == c &&
+            !invert
+        {
+            suff_len += 1;
+        } else if  curr_char != c &&
+            invert
+        {
+            suff_len += 1;
+        } else {
+            break;
+        }
+    }
+
+    return String::from(&_str[..l - suff_len])
 }
 
 pub fn find_closing_bracket(_str: &str, b: &str) -> i32 {
