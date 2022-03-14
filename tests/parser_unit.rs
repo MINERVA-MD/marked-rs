@@ -16,7 +16,6 @@ pub fn expect_html(mut tokens: &mut Vec<Token>, options: Options, html: &str, in
     };
 
     let expected_html = html.to_string();
-
     pretty_assertions::assert_eq!(actual_html, expected_html);
 }
 

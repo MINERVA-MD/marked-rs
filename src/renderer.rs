@@ -96,7 +96,7 @@ impl IRenderer for Renderer {
 
     fn heading(&mut self, text: &str, level: usize, raw: &str, mut slugger: &mut Slugger) -> String {
         if self.options.header_ids {
-            return format!(r#"<h{} id="{}{}">{}</h{}>\n"#,
+            return format!("<h{} id=\"{}{}\">{}</h{}>\n",
                            level,
                            self.options.header_prefix,
                            slugger.slug(raw, false),
@@ -182,7 +182,7 @@ impl IRenderer for Renderer {
     }
 
     fn em(&mut self, text: &str) -> String {
-        format!("<em>{}</em>\n", text)
+        format!("<em>{}</em>", text)
     }
 
     fn codespan(&mut self, text: &str) -> String {

@@ -1065,6 +1065,7 @@ pub fn get_rules(options: Options) -> Rules {
 }
 
 pub fn test() {
+    // panic!("This is a test panic");
     // let info_str = "html=====   ";
     // let lang_caps = regx(r#"\S*"#).captures(info_str).unwrap();
     // let lang = lang_caps.get(0).map_or("", |m| m.as_str());

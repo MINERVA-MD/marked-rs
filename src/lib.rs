@@ -11,7 +11,7 @@ pub mod defaults;
 pub mod renderer;
 pub mod tokenizer;
 pub mod text_renderer;
-
+pub mod extension;
 
 
 // pub fn parse(markdown: &str) -> String  {

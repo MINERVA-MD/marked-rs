@@ -1,40 +1,78 @@
+use std::{io, panic};
+use std::string::ParseError;
+
 use crate::slugger::Slugger;
-use crate::defaults::Options;
 use crate::renderer::Renderer;
 use crate::lexer::{ILexer, Lexer};
 use crate::parser::{IParser, Parser};
 use crate::text_renderer::TextRenderer;
 use crate::tokenizer::{Token, Tokenizer};
-
-type Callback = fn(tokens: &mut Token);
+use crate::defaults::{Callback, get_default_options, Options};
 
 pub struct Marked {
-    pub defaults: Options,
+    pub opt: Options,
     pub parser: Parser,
     pub renderer: Renderer,
     pub text_renderer: TextRenderer,
     pub lexer: Lexer,
-    pub tokenizer: Tokenizer,
     pub slugger: Slugger,
 }
 
 impl Marked {
 
-    pub fn new() {
-
+    pub fn new(opt: Option<Options>) -> Self {
+        let options = if opt.is_some() { opt.unwrap() }  else { get_default_options() };
+        Self {
+            opt: options,
+            parser: Parser::new(options),
+            renderer: Renderer::new(options),
+            text_renderer: TextRenderer::new(),
+            lexer: Lexer::new(options),
+            slugger: Slugger::new()
+        }
     }
 
-    pub fn marked(src: &str, opt: Options, callback: Callback) {
+    pub fn marked(&mut self, src: &str, opt: Option<Options>, callback: Option<Callback>) -> String {
         // Skipping pre-flight checks for now
 
+        if opt.is_none() {
+            self.set_options(get_default_options());
+        } else {
+            self.set_options(opt.unwrap())
+        }
+
+        if callback.is_some() {
+            // TODO: implement this; change callback pattern to use FnMut or observer-like pattern
+        }
+
+        // TODO: Wrap this with error handling
+        let mut lexer = Lexer::new(self.opt);
+        let tokens = lexer.lex(src);
+
+        if self.opt.walk_tokens.is_some() {
+            self.walk_tokens(tokens, self.opt.walk_tokens.unwrap())
+        }
+
+        let mut parser = Parser::new(self.opt);
+
+        parser.parse(tokens, true)
     }
 
-    pub fn parse() {
+    pub fn parse(&mut self, src: &str, opt: Option<Options>, callback: Option<Callback>) -> String {
         // Skipping pre-flight checks for now
+        self.marked(src, opt, callback)
     }
 
-    pub fn use_() {
-        // Skipping pre-flight checks for now
+    pub fn use_(&mut self) {
+        // TODO: Skipping pre-flight checks for now
+    }
+
+    pub fn set_options(&mut self, opt: Options) {
+        self.opt = opt;
+    }
+
+    pub fn get_defaults(&mut self) -> &mut Options {
+       &mut self.opt
     }
 
     pub fn walk_tokens(&mut self, mut tokens:  &mut Vec<Token>, callback: Callback) {
@@ -45,6 +83,16 @@ impl Marked {
             match token._type {
 
                 "table"      => {
+                    for mut cell in token.header.iter_mut() {
+                        self.walk_tokens(&mut cell.tokens, callback);
+                    }
+
+                    for mut row in token.rows.iter_mut() {
+                        for mut rcell in row.iter_mut() {
+                            self.walk_tokens(&mut rcell.tokens, callback)
+                        }
+                    }
+
                     break;
                 }
 
@@ -54,8 +102,8 @@ impl Marked {
                 }
 
                 _       => {
-                    if self.defaults.extensions.is_some() {
-                        todo!("Iterate through child tokens")
+                    if self.opt.extensions.is_some() {
+                        // todo!("Iterate through child tokens")
                     } else if token.tokens.len() > 0 {
                         self.walk_tokens(&mut token.tokens, callback);
                     }
@@ -65,9 +113,8 @@ impl Marked {
 
     }
 
-    pub fn parse_inline(&mut self, src: &str, opt: Options) -> String {
-        // Skipping pre-flight checks for now
-        let mut ret: String = String::from("");
+    pub fn parse_inline(&mut self, src: &str, opt: Option<Options>) -> String {
+        // TODO: Skipping pre-flight checks for now
 
         // panic::set_hook(Box::new(|_info| {
         //     if opt.silent {
@@ -75,11 +122,18 @@ impl Marked {
         //     }
         // }));
 
-        let mut tokens = self.lexer.lex_inline(src, opt);
-        if opt.walk_tokens.is_some() {
-            self.walk_tokens(&mut tokens, opt.walk_tokens.unwrap());
+        if opt.is_none() {
+            self.set_options(get_default_options());
+        } else {
+            self.set_options(opt.unwrap())
         }
-        ret = self.parser.parse_inline(&mut tokens, self.renderer);
-        ret
+
+        let mut tokens = self.lexer.lex_inline(src, self.opt);
+        if self.opt.walk_tokens.is_some() {
+            self.walk_tokens(&mut tokens, self.opt.walk_tokens.unwrap());
+        }
+
+
+        self.parser.parse_inline(&mut tokens, self.renderer)
     }
 }

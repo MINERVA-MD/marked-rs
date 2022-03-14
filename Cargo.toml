@@ -19,6 +19,7 @@ harness = false
 [dependencies]
 rand = "0.8.5"
 regex = "1.5.4"
+ntest = "0.7.5"
 kuchiki = "0.8.1"
 seq-macro = "0.3"
 scraper = "0.12.0"

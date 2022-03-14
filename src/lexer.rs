@@ -81,21 +81,6 @@ impl ILexer for Lexer {
         self.block_tokens(new_src.as_str(), &mut tokens, "self");
         self.tokens.append(&mut tokens);
 
-        // println!("{:?}", self.tokens);
-
-        // let mut next: InlineToken;
-
-        // loop {
-        //     if self.inline_queue.len() == 0 {
-        //         break;
-        //     } else {
-        //         next = self.inline_queue.remove(0);
-        //         let idx = next.parent_block_idx;
-        //         let tokens = self.inline_tokens(next.src.as_str(), next.tokens);
-        //         self.tokens.get_mut(idx).unwrap().tokens = tokens;
-        //     }
-        // }
-
         &mut self.tokens
     }
 
@@ -121,7 +106,7 @@ impl ILexer for Lexer {
             // newline
             token = self.tokenizer.space(_src.as_str());
             if token.is_some() {
-                println!("Entered Newline/Space Block");
+                // println!("Entered Newline/Space Block");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
 
@@ -142,7 +127,7 @@ impl ILexer for Lexer {
             // code
             token = self.tokenizer.code(_src.as_str());
             if token.is_some() {
-                println!("Entered Code Block");
+                // println!("Entered Code Block");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -176,7 +161,7 @@ impl ILexer for Lexer {
             // fences
             token = self.tokenizer.fences(_src.as_str());
             if token.is_some() {
-                println!("Entered Fences Block");
+                // println!("Entered Fences Block");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -188,7 +173,7 @@ impl ILexer for Lexer {
             // heading
             token = self.tokenizer.heading(_src.as_str());
             if token.is_some() {
-                println!("Entered Heading Block");
+                // println!("Entered Heading Block");
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -203,7 +188,7 @@ impl ILexer for Lexer {
             // hr
             token = self.tokenizer.hr(_src.as_str());
             if token.is_some() {
-                println!("Entered Hr Block");
+                // println!("Entered Hr Block");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -215,7 +200,7 @@ impl ILexer for Lexer {
             // blockquote
             token = self.tokenizer.blockquote(_src.as_str());
             if token.is_some() {
-                println!("Entered Blockquote Block");
+                // println!("Entered Blockquote Block");
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -232,7 +217,7 @@ impl ILexer for Lexer {
             // list
             token = self.tokenizer.list(_src.as_str());
             if token.is_some() {
-                println!("Entered List Block");
+                // println!("Entered List Block");
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -288,7 +273,7 @@ impl ILexer for Lexer {
             // html
             token = self.tokenizer.html(_src.as_str());
             if token.is_some() {
-                println!("Entered HTML Block");
+                // println!("Entered HTML Block");
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -306,7 +291,7 @@ impl ILexer for Lexer {
             // def
             token = self.tokenizer.def(_src.as_str());
             if token.is_some() {
-                println!("Entered Def Block");
+                // println!("Entered Def Block");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -351,7 +336,7 @@ impl ILexer for Lexer {
             let mut inline_tokens = &mut vec![];
             token = self.tokenizer.table(_src.as_str(), inline_tokens, tokens.len());
             if token.is_some() {
-                println!("Entered Table (GFM) Block");
+                // println!("Entered Table (GFM) Block");
                 // Process inline tokens for headers and rows
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
@@ -377,7 +362,7 @@ impl ILexer for Lexer {
             // lheading
             token = self.tokenizer.lheading(_src.as_str());
             if token.is_some() {
-                println!("Entered LHeading Block");
+                // println!("Entered LHeading Block");
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -402,7 +387,7 @@ impl ILexer for Lexer {
             if self.state.top &&
                 token.is_some()
             {
-                println!("Entered Paragraph Block");
+                // println!("Entered Paragraph Block");
                 let mut _token = token.unwrap();
                 // self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), tokens.len());
                 let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
@@ -444,7 +429,7 @@ impl ILexer for Lexer {
             // text
             token = self.tokenizer.text(_src.as_str());
             if token.is_some() {
-                println!("Entered Text Block");
+                // println!("Entered Text Block");
 
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
@@ -483,7 +468,7 @@ impl ILexer for Lexer {
                 let err_msg = format!("Infinite loop on byte:  {}", _src.chars().nth(0).unwrap() as u32);
 
                 if self.options.silent {
-                    println!("Warning! {}", err_msg);
+                    // println!("Warning! {}", err_msg);
                     break;
                 } else {
                     panic!("{}", err_msg);
@@ -508,13 +493,13 @@ impl ILexer for Lexer {
 
         // Mask out reflinks
         if self.links.len() > 0 {
-            println!("Entered Inline Reflinks Masking");
+            // println!("Entered Inline Reflinks Masking");
             let mut end_idx = 0;
             loop {
                 let match_caps = self.tokenizer.rules.inline.exec_fc(_masked_src.as_str(), MDInline::RefLinkSearch, None);
                 if match_caps.is_some() {
 
-                    // println!("{:#?}", match_caps);
+                    // // println!("{:#?}", match_caps);
                     let caps = match_caps.unwrap();
                     let end = caps.get(0).unwrap().end();
 
@@ -563,7 +548,7 @@ impl ILexer for Lexer {
         loop {
             let match_caps = self.tokenizer.rules.inline.exec_fc(_masked_src.as_str(), MDInline::BlockSkip, None);
             if match_caps.is_some() {
-                println!("Entered Other Blocks Masking");
+                // println!("Entered Other Blocks Masking");
                 let caps = match_caps.unwrap();
                 let match0 = caps.get(0).map_or("", |m| m.as_str());
 
@@ -593,7 +578,7 @@ impl ILexer for Lexer {
         loop {
             let match_caps = self.tokenizer.rules.inline.exec_fc(_masked_src.as_str(), MDInline::EscapedEmSt, None);
             if match_caps.is_some() {
-                println!("Entered Escaped Em/Strong Delim Masking");
+                // println!("Entered Escaped Em/Strong Delim Masking");
                 let caps = match_caps.unwrap();
                 let match0 = caps.get(0).map_or("", |m| m.as_str());
 
@@ -629,7 +614,7 @@ impl ILexer for Lexer {
             // escape
             token = self.tokenizer.escape(_src.as_str());
             if token.is_some() {
-                println!("Inside Escape");
+                // println!("Inside Escape");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -644,7 +629,7 @@ impl ILexer for Lexer {
             let mut in_raw_block = self.state.in_raw_block.clone();
             token = self.tokenizer.tag(_src.as_str(), &mut in_link, &mut in_raw_block);
             if token.is_some() {
-                println!("Inside Tag");
+                // println!("Inside Tag");
 
                 self.state.in_link = in_link.clone();
                 self.state.in_raw_block = in_raw_block.clone();
@@ -677,7 +662,7 @@ impl ILexer for Lexer {
             // link
             token = self.tokenizer.link(_src.as_str());
             if token.is_some() {
-                println!("Inside Link");
+                // println!("Inside Link");
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -698,7 +683,7 @@ impl ILexer for Lexer {
             // reflink, nolink
             token = self.tokenizer.ref_link(_src.as_str(), &self.links);
             if token.is_some() {
-                println!("Inside Reflink/Nolink");
+                // println!("Inside Reflink/Nolink");
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -733,7 +718,7 @@ impl ILexer for Lexer {
             // em & strong
             token = self.tokenizer.em_strong(_src.as_str(), _masked_src.as_str(), prev_char.to_string().as_str());
             if token.is_some() {
-                println!("Inside Em/Strong");
+                // println!("Inside Em/Strong");
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -748,7 +733,7 @@ impl ILexer for Lexer {
             // code
             token = self.tokenizer.code_span(_src.as_str());
             if token.is_some() {
-                println!("Inside Code Span");
+                // println!("Inside Code Span");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -760,7 +745,7 @@ impl ILexer for Lexer {
             // br
             token = self.tokenizer.br(_src.as_str());
             if token.is_some() {
-                println!("Inside Br");
+                // println!("Inside Br");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -772,7 +757,7 @@ impl ILexer for Lexer {
             // del (gfm)
             token = self.tokenizer.del(_src.as_str());
             if token.is_some() {
-                println!("Inside Del");
+                // println!("Inside Del");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -785,7 +770,7 @@ impl ILexer for Lexer {
             // autolink
             token = self.tokenizer.autolink(_src.as_str(), mangle);
             if token.is_some() {
-                println!("Inside Autolink");
+                // println!("Inside Autolink");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -798,7 +783,7 @@ impl ILexer for Lexer {
             // url (gfm)
             token = self.tokenizer.url(_src.as_str(), mangle);
             if !self.state.in_link && token.is_some() {
-                println!("Inside Url");
+                // println!("Inside Url");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -819,7 +804,7 @@ impl ILexer for Lexer {
             let in_raw_block = self.state.in_raw_block.clone();
             token = self.tokenizer.inline_text(_cut_src.as_str(), in_raw_block, smartypants);
             if token.is_some() {
-                println!("Entered Inline Text");
+                // println!("Entered Inline Text");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -853,7 +838,7 @@ impl ILexer for Lexer {
                 let err_msg = format!("Infinite loop on byte:  {}", _src.chars().nth(0).unwrap() as u32);
 
                 if self.options.silent {
-                    println!("Warning! {}", err_msg);
+                    // println!("Warning! {}", err_msg);
                     break;
                 } else {
                     panic!("{}", err_msg);

@@ -1,6 +1,8 @@
 use crate::rules::Rules;
 use crate::tokenizer::Token;
 
+pub type Callback = fn(token: &mut Token);
+
 #[derive(Clone)]
 pub struct Options {
     pub base_url: &'static str,
@@ -19,7 +21,7 @@ pub struct Options {
     pub smartypants: bool,
     pub is_highlight: bool,
     pub tokenizer: Option<&'static str>,
-    pub walk_tokens: Option<fn(tokens: &mut Token)>,
+    pub walk_tokens: Option<Callback>,
     pub xhtml: bool
 }
 
@@ -69,7 +71,6 @@ impl Options {
         }
     }
 
-
     pub fn highlight(&mut self, code: &str, lang: &str) -> String {
         "".to_string()
     }
@@ -84,9 +85,7 @@ impl Options {
 
 }
 
-impl Copy for Options {
-
-}
+impl Copy for Options {}
 
 pub fn get_default_options() -> Options {
     Options {
