@@ -38,6 +38,8 @@ pub struct Token {
     pub code_block_style: String
 }
 
+
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct Link {
     pub href: String,
@@ -75,7 +77,6 @@ impl Token {
             code_block_style: "".to_string()
         }
     }
-
     pub fn append_to_raw(&mut self, to_append: &str) {
         self.raw.push_str(to_append);
     }
@@ -744,7 +745,11 @@ impl ITokenizer for Tokenizer {
     fn def(&mut self, src: &str) -> Option<Token> {
         let def_caps = self.rules.block.exec_fc(src, MDBlock::Def, None);
 
+        println!("src: {}||\n\n{:#?}", src.len(), def_caps);
+
         if def_caps.is_some() {
+            // println!("Got Caps: {:#?} |", def_caps);
+
             let caps = def_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
             let cap1 = caps.get(1).map_or("", |m| m.as_str());
@@ -1004,7 +1009,9 @@ impl ITokenizer for Tokenizer {
             let caps = paragraph_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
             let cap1 = caps.get(1).map_or("", |m| m.as_str());
-            let text = if cap1.chars().nth(cap1.len() - 1).unwrap().to_string() == "\n" {
+            let text = if cap1.chars().nth(cap1.len() - 1).is_some() &&
+                cap1.chars().nth(cap1.len() - 1).unwrap().to_string() == "\n"
+            {
                 cap1.chars().next_back().unwrap().to_string()
             } else {
                 cap1.to_string()
@@ -1305,7 +1312,7 @@ impl ITokenizer for Tokenizer {
             let cap1 = caps.get(1).map_or("", |m| m.as_str());
             let cap2 = caps.get(2).map_or("", |m| m.as_str());
 
-            let link = if !cap2.is_empty() {
+            let link = if cap2.len() > 0 {
                 regx(r#"\s+"#).replace_all(cap2, " ").to_string()
             } else {
                 regx(r#"\s+"#).replace_all(cap1, " ").to_string()
@@ -1375,7 +1382,6 @@ impl ITokenizer for Tokenizer {
                     code_block_style: "".to_string()
                 });
             }
-
 
             let link = Link {
                 href: link_ref.href.clone(),

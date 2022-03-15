@@ -1,9 +1,11 @@
 // Helpers
 use std::borrow::{Cow};
+use std::collections::HashMap;
 use lazy_static::lazy_static;
 use serde::de::Unexpected::Str;
 use urlencoding::{encode, decode};
 use fancy_regex::{Captures, Regex};
+use url::Url;
 
 use crate::lexer::regx;
 use crate::tokenizer::slice;
@@ -13,7 +15,30 @@ lazy_static! {
     static ref ESCAPE_TEST_NO_ENCODE: Regex = fancy_regex::Regex::new("[<>\"']|&(?!#?\\w+;)").unwrap();
     static ref UNESCAPE_TEST: Regex = Regex::new("(?i)&(#(?:\\d+)|(?:#x[0-9A-Fa-f]+)|(?:\\w+));?").unwrap();
     static ref CARET: Regex = Regex::new(r"(^|[^\\[])\\^").unwrap();
+
+    static ref SPECIALCHARS: HashMap<&'static str, &'static str> = {
+        let mut m = HashMap::new();
+        m.insert("%3B", ";");
+        m.insert("%2C", ",");
+        m.insert("%2F", "/");
+        m.insert("%3F", "?");
+        m.insert("%3A", ":");
+        m.insert("%40", "@");
+        m.insert("%26", "&");
+        m.insert("%3D", "=");
+        m.insert("%2B", "+");
+        m.insert("%24", "$");
+        m.insert("%21", "!");
+        m.insert("%2A", "*");
+        m.insert("%27", "'");
+        m.insert("%28", "(");
+        m.insert("%29", ")");
+        m.insert("%23", "#");
+        m
+    };
 }
+
+
 
 fn match_unescapes(cap: &Captures) -> String {
     let n =  &cap[1].to_lowercase();
@@ -126,8 +151,10 @@ pub fn clean_url(sanitize: bool, base: &str, href: &str) -> String {
         _href = resolve_url(base, _href.as_str());
     }
 
+    let encoded_uri = encode_uri(_href.as_str());
 
-    let encoded_uri = encode(_href.as_str()).to_string();
+    // println!("Href: {:?}", href);
+    // println!("Url Parsed: {:?}", Url::parse(href));
 
     // TODO: Note that encodeURI throws error when trying to encode surrogate
     _href = regx("%25")
@@ -327,5 +354,53 @@ pub fn repeat_string(pattern: &str, count: usize) -> String {
 
 pub fn check_sanitize_deprecation(opt: &str) {
     todo!()
+}
+
+pub fn encode_uri(uri: &str) -> String {
+
+    encode(uri).to_string()
+        .replace("%3B", ";")
+        .replace("%2C", ",")
+        .replace("%2F", "/")
+        .replace("%3F", "?")
+        .replace("%3A", ":")
+        .replace("%40", "@")
+        .replace("%26", "&")
+        .replace("%3D", "=")
+        .replace("%2B", "+")
+        .replace("%24", "$")
+        .replace("%21", "!")
+        .replace("%2A", "*")
+        .replace("%27", "'")
+        .replace("%28", "(")
+        .replace("%29", ")")
+        .replace("%23", "#")
+
+    // let url = Url::parse(uri);
+    //
+    // if url.is_ok() {
+    //     return "".to_string();
+    // } else {
+    //     let mut encoded_uri = encode(uri).to_string();
+    //     encoded_uri = encoded_uri
+    //         .replace("%3B", ";")
+    //         .replace("%2C", ",")
+    //         .replace("%2F", "/")
+    //         .replace("%3F", "?")
+    //         .replace("%3A", ":")
+    //         .replace("%40", "@")
+    //         .replace("%26", "&")
+    //         .replace("%3D", "=")
+    //         .replace("%2B", "+")
+    //         .replace("%24", "$")
+    //         .replace("%21", "!")
+    //         .replace("%2A", "*")
+    //         .replace("%27", "'")
+    //         .replace("%28", "(")
+    //         .replace("%29", ")")
+    //         .replace("%23", "#");
+    //
+    //     return encoded_uri;
+    // }
 }
 

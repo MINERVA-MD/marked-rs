@@ -214,7 +214,7 @@ mod parser {
     #[test]
     fn block_heading() {
 
-        let html = r#"<h1 id="heading">heading</h1>\n"#;
+        let html = "<h1 id=\"heading\">heading</h1>\n";
         let mut tokens = vec![
             Token {
                 _type: "heading",

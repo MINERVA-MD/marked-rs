@@ -5,6 +5,7 @@ macro_rules! spec_test {
         mod tests {
             use std::fs;
             use std::env;
+            use std::io::Write;
             use ntest::timeout;
             use seq_macro::seq;
             use std::path::Path;
@@ -23,6 +24,8 @@ macro_rules! spec_test {
                 start_line: i32,
                 end_line: i32,
                 section: String,
+                marked: String,
+                should_fail: bool
             }
 
             fn deserialize_specs(path: &str)-> String {
@@ -39,25 +42,37 @@ macro_rules! spec_test {
 
             seq!(N in $from..$to {
 
-                #(#[test_case(N)])*
-                #[timeout(1000)]
+                #(#[test_case(N + 1)])*
+                #[timeout(5000)]
                 fn verify_specs(index: usize) {
                     let specs: Vec<Spec> = get_specs();
                     let spec: &Spec = &specs[index];
 
                     let md = &spec.markdown;
                     let mut marked = Marked::new(None);
+                    let mut options = get_default_options();
 
-                    let parse_expected = &spec.html;
-                    let parse_actual = marked.parse(md, None, None);
+                    options.pedantic = false;
+                    options.header_ids = false;
 
-                    pretty_assertions::assert_eq!(*parse_expected, parse_actual);
+                    let expected_std_html = &spec.html;
+                    let expected_marked_html = &spec.marked;
+                    let spec_should_fail = &spec.should_fail;
+
+                    let actual_html = marked.parse(md, Some(options), None);
+
+                    if !(*spec_should_fail) {
+                        pretty_assertions::assert_eq!(*expected_marked_html, actual_html)
+                    }
                 }
             });
         }
     };
 }
 
-spec_test!("tests/fixtures/marked-specs/commonmark/commonmark.0.30.json", 0, 651);
+
+// 651
+
+spec_test!("tests/fixtures/marked-specs/commonmark/commonmark.0.30.json", 0, 300);
 
 

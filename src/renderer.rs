@@ -69,7 +69,7 @@ impl IRenderer for Renderer {
             }
         }
 
-        _code = regx(r#"\n$"#).replace_all(_code.as_str(), "").to_string();
+        _code = regx("\n$").replace_all(_code.as_str(), "").to_string();
         _code = format!("{}\n", _code);
 
 
@@ -79,7 +79,7 @@ impl IRenderer for Renderer {
             );
         }
 
-        format!(r#"<pre><code class="{}{}">{}</code></pre>\n"#,
+        format!("<pre><code class=\"{}{}\">{}</code></pre>\n",
                 self.options.lang_prefix,
                 escape(lang, true),
                 if escaped { _code } else { escape(_code.as_str(), true) }
@@ -200,11 +200,12 @@ impl IRenderer for Renderer {
     fn link(&mut self, href: &str, title: &str, text: &str) -> String {
         let _href = clean_url(self.options.sanitize, self.options.base_url, href);
 
+        println!("Href here: {}", _href);
         if _href == "" {
             return String::from(text);
         }
 
-        let mut out = format!(r#"<a href="{}""#, escape(href, false));
+        let mut out = format!(r#"<a href="{}""#, escape(_href.as_str(), false));
 
         if title != "" {
             out = format!(r#"{} title="{}""#, out, title);

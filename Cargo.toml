@@ -17,6 +17,7 @@ harness = false
 
 
 [dependencies]
+url = "2.2.2"
 rand = "0.8.5"
 regex = "1.5.4"
 ntest = "0.7.5"
@@ -25,6 +26,7 @@ seq-macro = "0.3"
 scraper = "0.12.0"
 gnuplot = "0.0.37"
 test-case = "1.2.1"
+urlencoded = "0.6.0"
 derivative = "2.2.0"
 html5ever = "0.25.1"
 fancy-regex = "0.8.0"

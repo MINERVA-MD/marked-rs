@@ -141,7 +141,6 @@
     "section": "[extension] Disallowed Raw HTML",
     "html": "<p><strong> &lt;title> &lt;style> <em></p>\n<blockquote>\n  &lt;xmp> is disallowed.  &lt;XMP> is also disallowed.\n</blockquote>",
     "markdown": "<strong> <title> <style> <em>\n\n<blockquote>\n  <xmp> is disallowed.  <XMP> is also disallowed.\n</blockquote>",
-    "example": 653,
-    "shouldFail": true
+    "example": 653
   }
 ]
