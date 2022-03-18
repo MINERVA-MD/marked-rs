@@ -1,3 +1,4 @@
+use std::borrow::{Borrow, BorrowMut};
 use std::cell::RefCell;
 use std::io::Write;
 use std::rc::Rc;
@@ -15,30 +16,28 @@ pub struct State {
 }
 
 pub struct Lexer {
-    pub links: Vec<Link>,
-    pub tokens: Vec<Token>,
-    pub token_links: Vec<&'static str>,
-    pub options: Options,
-    pub inline_queue: Vec<InlineToken>,
     pub state: State,
-    pub tokenizer: Tokenizer
+    pub links: Vec<Link>,
+    pub options: Options,
+    pub tokenizer: Tokenizer,
+    pub tokens: Vec<Rc<RefCell<Token>>>,
+    pub inline_queue: Vec<InlineToken>,
 }
 
 
 #[derive(Clone, Debug)]
 pub struct InlineToken {
     pub src: String,
-    pub tokens: Vec<Token>,
-    pub parent_block_idx: usize
+    pub token: Rc<RefCell<Token>>,
 }
 
 pub trait ILexer {
-    fn lex(&mut self, src: &str) -> &mut Vec<Token>;
-    fn block_tokens(&mut self, src: &str, tokens: &mut Vec<Token>, opt: &str);
-    fn inline_tokens<'a>(&mut self, src: &str, tokens: Vec<Token>) -> Vec<Token>;
+    fn lex<'a>(&mut self, src: &str) -> Vec<Token>;
+    fn inline(&mut self, src: &str, token: Rc<RefCell<Token>>);
     fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Token>;
+    fn block_tokens<'a>(&mut self, src: &str, tokens: &'a mut Vec<Rc<RefCell<Token>>>) -> &'a mut Vec<Rc<RefCell<Token>>>;
+    fn inline_tokens<'a>(&mut self, src: &str, tokens: &'a mut Vec<Token>) -> &'a mut Vec<Token>;
     fn check_extensions_block(&mut self, extensions_block: Option<&'static str>) -> bool;
-    fn inline(&mut self, src: String, tokens: Vec<Token>, parent_block_idx: usize);
     fn check_extensions_inline(&mut self, extensions_block: Option<&'static str>) -> bool;
 }
 
@@ -48,10 +47,9 @@ impl Lexer {
         Self {
             links: vec![],
             tokens: vec![],
-            token_links: vec![],
             options,
             tokenizer: Tokenizer::new(Some(options)),
-            inline_queue: Default::default(),
+            inline_queue: vec![],
             state: State {
                 in_link: false,
                 in_raw_block: false,
@@ -69,28 +67,97 @@ impl Lexer {
         lexer.lex(src);
         lexer
     }
+
+    pub fn get_tokens(&mut self) -> Vec<Token> {
+        let tokens: Vec<Token> = self.tokens
+            .iter_mut()
+            .map(|t_rc| {
+                let token_rc = t_rc
+                    .as_ref()
+                    .borrow_mut();
+
+                Token {
+                    _type: token_rc._type.clone(),
+                    raw: token_rc.raw.clone(),
+                    href: token_rc.href.clone(),
+                    title: token_rc.title.clone(),
+                    text: token_rc.text.clone(),
+                    tokens: token_rc.tokens.to_owned(),
+                    tag: token_rc.tag.clone(),
+                    ordered: token_rc.ordered.clone(),
+                    start: token_rc.start.clone(),
+                    lang: token_rc.lang.clone(),
+                    loose: token_rc.loose.clone(),
+                    items: token_rc.items.to_owned(),
+                    depth: token_rc.depth.clone(),
+                    escaped: token_rc.escaped.clone(),
+                    pre: token_rc.pre.clone(),
+                    task: token_rc.task.clone(),
+                    checked: token_rc.checked.clone(),
+                    in_link: token_rc.in_link.clone(),
+                    in_raw_block: token_rc.in_raw_block.clone(),
+                    links: token_rc.links.to_owned(),
+                    align: token_rc.align.to_owned(),
+                    rows: token_rc.rows.to_owned(),
+                    header: token_rc.header.to_owned(),
+                    code_block_style: token_rc.code_block_style.clone(),
+                }
+
+            })
+            .collect();
+
+        tokens
+    }
 }
 
 impl ILexer for Lexer {
 
-    fn lex(&mut self, src: &str) -> &mut Vec<Token> {
+    fn lex<'a>(&mut self, src: &str) -> Vec<Token> {
         let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
         new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
 
-        let mut tokens: Vec<Token> = vec![];
-        self.block_tokens(new_src.as_str(), &mut tokens, "self");
-        self.tokens.append(&mut tokens);
+        let mut _tokens = vec![];
+        let mut tokens: &mut Vec<Rc<RefCell<Token>>> = self.block_tokens(new_src.as_str(), &mut _tokens);
 
-        // let mut next = self.inline_queue.remove(0);
-        // while self.inline_queue.len() > 0 {
-        //     self.inline_tokens(next.src.as_str(), vec![]);
-        //     next = self.inline_queue.remove(0);
-        // }
+        // println!("{:#?}", self.inline_queue);
 
-        &mut self.tokens
+        while self.inline_queue.len() > 0 {
+            let next = self.inline_queue.remove(0);
+            let tokens = &mut next.token.as_ref().borrow_mut().tokens;
+            let inline_tokens = self.inline_tokens(
+                next.src.as_str(),
+                tokens
+            );
+
+            println!("{}\n{:#?}", next.src.as_str(), inline_tokens)
+        }
+
+
+
+        // self.tokens.append(&mut tokens);
+        //
+        //
+        // println!("{:#?}", self.tokens);
+        self.get_tokens()
     }
 
-    fn block_tokens(&mut self, src: &str, mut tokens: &mut Vec<Token>, opt: &str) {
+    fn inline(&mut self, src: &str, mut token: Rc<RefCell<Token>>) {
+        self.inline_queue.push(InlineToken {
+            src: src.to_string(),
+            token
+        });
+    }
+
+    fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Token> {
+        let mut lexer = Lexer::new(options);
+
+        let mut inline_tokens = vec![];
+        lexer.inline_tokens(src, &mut inline_tokens);
+
+        inline_tokens
+    }
+
+    fn block_tokens<'a>(&mut self, src: &str, mut tokens: &'a mut Vec<Rc<RefCell<Token>>>) ->  &'a mut Vec<Rc<RefCell<Token>>>{
 
         let mut _src: String = String::from(src);
         if self.options.pedantic {
@@ -101,57 +168,12 @@ impl ILexer for Lexer {
         let mut last_token: Token;
         let mut token: Option<Token>;
 
-
         let mut last_paragraph_clipped = false;
-
-        let mut push_to_tokens = false;
-        let mut is_link_inside_paragraph: bool = false;
-        let mut add_paragraph_inline_tokens: bool = false;
-        let mut last_paragraph_token: &mut Token = &mut Token {
-            _type: "none",
-            raw: "".to_string(),
-            href: "".to_string(),
-            title: "".to_string(),
-            text: "".to_string(),
-            tokens: vec![],
-            tag: "".to_string(),
-            ordered: false,
-            start: 0,
-            lang: "".to_string(),
-            loose: false,
-            items: vec![],
-            depth: 0,
-            escaped: false,
-            pre: false,
-            task: false,
-            checked: false,
-            in_link: false,
-            in_raw_block: false,
-            links: vec![],
-            align: vec![],
-            rows: vec![],
-            header: vec![],
-            code_block_style: "".to_string()
-        };
 
         while _src.len() > 0 {
 
-            if add_paragraph_inline_tokens {
-                let _token = &mut *last_paragraph_token;
-                let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                _token.tokens.append(&mut inline_tokens);
-
-                add_paragraph_inline_tokens = false;
-                is_link_inside_paragraph = false;
-
-                if push_to_tokens {
-                    tokens.push(_token.clone());
-                    push_to_tokens = false;
-                }
-            }
-
             if self.options.extensions.is_some()
-            && self.check_extensions_block(self.options.extensions)
+                && self.check_extensions_block(self.options.extensions)
             {
                 continue;
             }
@@ -159,9 +181,12 @@ impl ILexer for Lexer {
             // newline
             token = self.tokenizer.space(_src.as_str());
             if token.is_some() {
-                // println!("Entered Newline/Space Block");
-                let _token = token.unwrap();
-                let idx = _token.raw.len();
+                println!("Entered Newline/Space Block");
+                let _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
 
                 _src = String::from(&_src[idx..]);
 
@@ -170,51 +195,46 @@ impl ILexer for Lexer {
                     // so move it there so that we don't get unnecessary paragraph tags
 
                     let t_idx = tokens.len() - 1;
-                    tokens.get_mut(t_idx).unwrap().raw.push_str("\n");
+                    tokens.get_mut(t_idx).unwrap()
+                        .as_ref()
+                        .borrow_mut()
+                        .raw.push_str("\n");
+
                 } else {
                     tokens.push(_token);
                 }
                 continue;
             }
 
-            if add_paragraph_inline_tokens {
-                let _token = &mut *last_paragraph_token;
-                let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                _token.tokens.append(&mut inline_tokens);
-
-                add_paragraph_inline_tokens = false;
-                is_link_inside_paragraph = false;
-
-                if push_to_tokens {
-                    tokens.push(_token.clone());
-                    push_to_tokens = false;
-                }
-            }
 
             // code
             token = self.tokenizer.code(_src.as_str());
             if token.is_some() {
-                // println!("Entered Code Block");
-                let _token = token.unwrap();
-                let idx = _token.raw.len();
+                println!("Entered Code Block");
+                let mut _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
+
                 _src = String::from(&_src[idx..]);
 
                 if tokens.len() > 0 {
                     let t_idx = tokens.len() - 1;
-                    let _last_token = tokens.get_mut(t_idx).unwrap();
-                    // last_token = _last_token.clone();
 
-                    if _last_token._type == "paragraph" ||
-                        _last_token._type == "text"
+                    let is_paragraph = tokens.get(t_idx).unwrap().as_ref().borrow()._type == "paragraph";
+                    let is_text = tokens.get(t_idx).unwrap().as_ref().borrow()._type == "text";
+
+                    if  is_paragraph || is_text
                     {
-                        _last_token.append_to_raw("\n");
-                        _last_token.append_to_raw(_token.raw.as_str());
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_raw("\n");
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_raw(_token.as_ref().borrow_mut().raw.as_str());
 
-                        _last_token.append_to_text("\n");
-                        _last_token.append_to_text(_token.text.as_str());
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text("\n");
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text(_token.as_ref().borrow_mut().text.as_str());
 
                         let q_idx = self.inline_queue.len() - 1;
-                        self.inline_queue[q_idx].src = _last_token.text.to_string();
+                        self.inline_queue[q_idx].src = tokens.get(t_idx).unwrap().as_ref().borrow().text.to_string();
                     } else {
                         tokens.push(_token);
                     }
@@ -228,9 +248,13 @@ impl ILexer for Lexer {
             // fences
             token = self.tokenizer.fences(_src.as_str());
             if token.is_some() {
-                // println!("Entered Fences Block");
-                let _token = token.unwrap();
-                let idx = _token.raw.len();
+                println!("Entered Fences Block");
+                let _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
+
                 _src = String::from(&_src[idx..]);
 
                 tokens.push(_token);
@@ -240,14 +264,27 @@ impl ILexer for Lexer {
             // heading
             token = self.tokenizer.heading(_src.as_str());
             if token.is_some() {
-                // println!("Entered Heading Block");
-                let mut _token = token.unwrap();
-                let idx = _token.raw.len();
+                println!("Entered Heading Block");
+                let _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
+
                 _src = String::from(&_src[idx..]);
 
-                let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                _token.tokens.append(&mut inline_tokens);
+                // TODO: This is the incorrect call here - call should be made to self.inline instead
+                // self.inline(_token.as_ref().borrow_mut().text.as_str(), Rc::clone(&_token));
 
+                self.inline_queue.push(InlineToken {
+                    src: _token.as_ref().borrow_mut().text.clone(),
+                    token: Rc::clone(&_token)
+                });
+
+                // let mut inline_tokens: Vec<Token> = vec![];
+                // self.inline_tokens(_token.as_ref().borrow().text.as_str(), &mut inline_tokens);
+                // _token.as_ref().borrow_mut().tokens.append(&mut inline_tokens);
+                
                 tokens.push(_token);
                 continue;
             }
@@ -255,9 +292,12 @@ impl ILexer for Lexer {
             // hr
             token = self.tokenizer.hr(_src.as_str());
             if token.is_some() {
-                // println!("Entered Hr Block");
-                let _token = token.unwrap();
-                let idx = _token.raw.len();
+                println!("Entered Hr Block");
+                let _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
 
                 tokens.push(_token);
@@ -267,15 +307,56 @@ impl ILexer for Lexer {
             // blockquote
             token = self.tokenizer.blockquote(_src.as_str());
             if token.is_some() {
-                // println!("Entered Blockquote Block");
-                let mut _token = token.unwrap();
-                let idx = _token.raw.len();
+
+                let _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
 
-                let mut block_tokens: Vec<Token> = vec![];
-                self.block_tokens(_token.text.as_str(), &mut block_tokens, "");
+                // Add block tokens
+                let mut block_tokens: Vec<Rc<RefCell<Token>>> = vec![];
+                self.block_tokens( _token.as_ref().borrow().text.as_str(), &mut block_tokens);
 
-                _token.tokens = block_tokens;
+                _token.as_ref().borrow_mut().tokens.append(&mut block_tokens.iter_mut()
+                    .map(|t_rc| {
+                        let token_rc = t_rc
+                            .as_ref()
+                            .borrow_mut();
+
+                        Token {
+                            _type: token_rc._type.clone(),
+                            raw: token_rc.raw.clone(),
+                            href: token_rc.href.clone(),
+                            title: token_rc.title.clone(),
+                            text: token_rc.text.clone(),
+                            tokens: token_rc.tokens.to_owned(),
+                            tag: token_rc.tag.clone(),
+                            ordered: token_rc.ordered.clone(),
+                            start: token_rc.start.clone(),
+                            lang: token_rc.lang.clone(),
+                            loose: token_rc.loose.clone(),
+                            items: token_rc.items.to_owned(),
+                            depth: token_rc.depth.clone(),
+                            escaped: token_rc.escaped.clone(),
+                            pre: token_rc.pre.clone(),
+                            task: token_rc.task.clone(),
+                            checked: token_rc.checked.clone(),
+                            in_link: token_rc.in_link.clone(),
+                            in_raw_block: token_rc.in_raw_block.clone(),
+                            links: token_rc.links.to_owned(),
+                            align: token_rc.align.to_owned(),
+                            rows: token_rc.rows.to_owned(),
+                            header: token_rc.header.to_owned(),
+                            code_block_style: token_rc.code_block_style.clone(),
+                        }
+
+                    })
+                    .collect());
+
+                println!("Entered Blockquote Block");
+
 
                 tokens.push(_token);
                 continue;
@@ -284,24 +365,63 @@ impl ILexer for Lexer {
             // list
             token = self.tokenizer.list(_src.as_str());
             if token.is_some() {
-                // println!("Entered List Block");
-                let mut _token = token.unwrap();
-                let idx = _token.raw.len();
+                println!("Entered List Block");
+                let _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
 
 
-                let l = _token.items.len();
+                let l = _token.as_ref().borrow().items.len();
                 // Item child tokens handled here at end because we needed to have the final item to trim it first
 
                 for i in 0..l {
                     self.state.top = false;
 
-                    let mut block_tokens: Vec<Token> = vec![];
-                    self.block_tokens(_token.items[i].text.as_str(), &mut block_tokens, "");
+                    let mut block_tokens: Vec<Rc<RefCell<Token>>> = vec![];
+                    self.block_tokens(_token.as_ref().borrow_mut().items[i].text.as_str(), 
+                                      &mut block_tokens
+                    );
 
-                    _token.items[i].tokens = block_tokens;
+                    _token.as_ref().borrow_mut().items[i].tokens = block_tokens.iter_mut()
+                        .map(|t_rc| {
+                            let token_rc = t_rc
+                                .as_ref()
+                                .borrow_mut();
 
-                    let spacers: Vec<Token> = _token.items[i].tokens.clone()
+                            Token {
+                                _type: token_rc._type.clone(),
+                                raw: token_rc.raw.clone(),
+                                href: token_rc.href.clone(),
+                                title: token_rc.title.clone(),
+                                text: token_rc.text.clone(),
+                                tokens: token_rc.tokens.to_owned(),
+                                tag: token_rc.tag.clone(),
+                                ordered: token_rc.ordered.clone(),
+                                start: token_rc.start.clone(),
+                                lang: token_rc.lang.clone(),
+                                loose: token_rc.loose.clone(),
+                                items: token_rc.items.to_owned(),
+                                depth: token_rc.depth.clone(),
+                                escaped: token_rc.escaped.clone(),
+                                pre: token_rc.pre.clone(),
+                                task: token_rc.task.clone(),
+                                checked: token_rc.checked.clone(),
+                                in_link: token_rc.in_link.clone(),
+                                in_raw_block: token_rc.in_raw_block.clone(),
+                                links: token_rc.links.to_owned(),
+                                align: token_rc.align.to_owned(),
+                                rows: token_rc.rows.to_owned(),
+                                header: token_rc.header.to_owned(),
+                                code_block_style: token_rc.code_block_style.clone(),
+                            }
+
+                        })
+                        .collect();
+
+                    let spacers: Vec<Token> = _token.as_ref().borrow_mut().items[i].tokens.clone()
                         .into_iter()
                         .filter(|t| t._type == "space")
                         .collect();
@@ -323,12 +443,12 @@ impl ILexer for Lexer {
                             }
                             return false;
                         });
-                    if !_token.loose &&
+                    if !_token.as_ref().borrow().loose &&
                         spacers.len() > 0 &&
                         has_multiple_line_breaks
                     {
-                        _token.loose = true;
-                        _token.items[i].loose = true;
+                        _token.as_ref().borrow_mut().loose = true;
+                        _token.as_ref().borrow_mut().items[i].loose = true;
                     }
                 }
 
@@ -340,14 +460,25 @@ impl ILexer for Lexer {
             // html
             token = self.tokenizer.html(_src.as_str());
             if token.is_some() {
-                // println!("Entered HTML Block");
-                let mut _token = token.unwrap();
-                let idx = _token.raw.len();
+                println!("Entered HTML Block");
+                let _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
 
                 if self.options.sanitize {
-                    let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                    _token.tokens.append(&mut inline_tokens);
+                    // TODO: This is the incorrect call here - call should be made to self.inline instead
+                    // self.inline(_token.as_ref().borrow_mut().text.as_str(), Rc::clone(&_token));
+                    self.inline_queue.push(InlineToken {
+                        src: _token.as_ref().borrow_mut().text.clone(),
+                        token: Rc::clone(&_token)
+                    });
+
+                    // let mut inline_tokens: Vec<Token> = vec![];
+                    // self.inline_tokens(_token.as_ref().borrow().text.as_str(), &mut inline_tokens);
+                    // _token.as_ref().borrow_mut().tokens.append(&mut inline_tokens);
                 }
 
                 tokens.push(_token);
@@ -359,100 +490,81 @@ impl ILexer for Lexer {
             token = self.tokenizer.def(_src.as_str());
             if token.is_some() {
                 println!("Entered Def Block");
-                let _token = token.unwrap();
-                let idx = _token.raw.len();
+                let _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
 
-                let link_idx = self.links.iter().position(|l| l.tag == _token.tag );
+                let link_idx = self.links.iter().position(|l| l.tag ==  _token.as_ref().borrow().tag );
                 if tokens.len() > 0 {
                     let t_idx = tokens.len() - 1;
-                    let _last_token = tokens.get_mut(t_idx).unwrap();
-                    last_token = _last_token.clone();
 
-                    if last_token._type == "paragraph" ||
-                        last_token._type == "text"
+                    let mut __last_token = tokens.get_mut(t_idx).unwrap();
+                    let mut _last_token = __last_token
+                        .as_ref()
+                        .borrow_mut();
+
+                    if _last_token._type == "paragraph" ||
+                        _last_token._type == "text"
                     {
-                        last_token.append_to_raw("\n");
-                        last_token.append_to_raw(_token.raw.as_str());
+                        _last_token.append_to_raw("\n");
+                        _last_token.append_to_raw(_token.as_ref().borrow_mut().raw.as_str());
 
-                        last_token.append_to_text("\n");
-                        last_token.append_to_text(_token.text.as_str());
+                        _last_token.append_to_text("\n");
+                        _last_token.append_to_text(_token.as_ref().borrow_mut().text.as_str());
 
                         let q_idx = self.inline_queue.len() - 1;
-                        self.inline_queue[q_idx].src = last_token.text.to_string();
+                        self.inline_queue[q_idx].src = _last_token.text.to_string();
                     } else if link_idx.is_none()  {
                         self.links.push(Link {
-                            href: _token.href.to_string(),
-                            title: _token.title.to_string(),
-                            tag: _token.tag.to_string()
+                            href:  _token.as_ref().borrow().href.to_string(),
+                            title:  _token.as_ref().borrow().title.to_string(),
+                            tag:  _token.as_ref().borrow().tag.to_string()
                         });
                     }
 
                 } else if link_idx.is_none() {
                     self.links.push(Link {
-                        href: _token.href.to_string(),
-                        title: _token.title.to_string(),
-                        tag: _token.tag.to_string()
+                        href:  _token.as_ref().borrow().href.to_string(),
+                        title:  _token.as_ref().borrow().title.to_string(),
+                        tag:  _token.as_ref().borrow().tag.to_string()
                     });
-                }
-                if add_paragraph_inline_tokens {
-                    let _token = &mut *last_paragraph_token;
-                    let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                    _token.tokens.append(&mut inline_tokens);
-
-                    add_paragraph_inline_tokens = false;
-                    is_link_inside_paragraph = false;
-
-                    if push_to_tokens {
-                        tokens.push(_token.clone());
-                        push_to_tokens = false;
-                    }
                 }
                 continue;
             }
 
 
-            // let mut push_paragraph_to_tokens = false;
-            // let mut is_link_inside_paragraph: bool = false;
-            // let mut add_paragraph_inline_tokens: bool = false;
-            // let mut last_paragraph_token: &mut Token;
-
-            if add_paragraph_inline_tokens {
-                let _token = &mut *last_paragraph_token;
-                let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                _token.tokens.append(&mut inline_tokens);
-
-                add_paragraph_inline_tokens = false;
-                is_link_inside_paragraph = false;
-
-                if push_to_tokens {
-                    tokens.push(_token.clone());
-                    push_to_tokens = false;
-                }
-            }
-
-
             // table (gfm)
             let mut inline_tokens = &mut vec![];
-            token = self.tokenizer.table(_src.as_str(), inline_tokens, tokens.len());
+            token = self.tokenizer.table(_src.as_str(), inline_tokens);
             if token.is_some() {
-                // println!("Entered Table (GFM) Block");
+                println!("Entered Table (GFM) Block");
                 // Process inline tokens for headers and rows
-                let mut _token = token.unwrap();
-                let idx = _token.raw.len();
+                let mut _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
 
-                let mut l = _token.header.len();
+                let mut l = _token.as_ref().borrow().header.len();
                 for j in 0..l {
-                    let tokens = self.inline_tokens(_token.header[j].text.as_str(), vec![]);
-                    _token.header[j].tokens = tokens;
+                    let mut tokens = vec![];
+                    self.inline_tokens(_token.as_ref().borrow().header[j].text.as_str(), &mut tokens);
+
+
+                    _token.as_ref().borrow_mut().header[j].tokens = tokens;
                 }
 
-                l = _token.rows.len();
+                l = _token.as_ref().borrow().rows.len();
                 for j in 0..l {
-                    for k in 0.._token.rows[j].len() {
-                        let tokens = self.inline_tokens(_token.rows[j][k].text.as_str(), vec![]);
-                        _token.rows[j][k].tokens = tokens;
+                    for k in 0.._token.as_ref().borrow().rows[j].len() {
+                        let mut tokens = vec![];
+
+                        self.inline_tokens(_token.as_ref().borrow().rows[j][k].text.as_str(), &mut tokens);
+                        _token.as_ref().borrow_mut().rows[j][k].tokens = tokens;
                     }
                 }
                 tokens.push(_token);
@@ -462,14 +574,25 @@ impl ILexer for Lexer {
             // lheading
             token = self.tokenizer.lheading(_src.as_str());
             if token.is_some() {
-                // println!("Entered LHeading Block");
-                let mut _token = token.unwrap();
-                let idx = _token.raw.len();
+                println!("Entered LHeading Block");
+                let mut _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
 
-                // self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), tokens.len());
-                let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                _token.tokens.append(&mut inline_tokens);
+                // TODO: This is the incorrect call here - call should be made to self.inline instead
+                // self.inline(_token.as_ref().borrow_mut().text.as_str(), Rc::clone(&_token));
+
+                self.inline_queue.push(InlineToken {
+                    src: _token.as_ref().borrow_mut().text.clone(),
+                    token: Rc::clone(&_token)
+                });
+
+                // let mut inline_tokens: Vec<Token> = vec![];
+                // self.inline_tokens(_token.as_ref().borrow().text.as_str(), &mut inline_tokens);
+                // _token.as_ref().borrow_mut().tokens.append(&mut inline_tokens);
 
                 tokens.push(_token);
                 continue;
@@ -488,31 +611,46 @@ impl ILexer for Lexer {
                 token.is_some()
             {
                 println!("Entered Paragraph Block");
-                let mut _token = token.unwrap();
-                let idx = _token.raw.len();
+                let _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
 
-                // self.inline(String::from(_token.text.as_str()), _token.tokens.clone(), tokens.len());
-                let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                _token.tokens.append(&mut inline_tokens);
+                let idx = _token.as_ref().borrow().raw.len();
+
+                // TODO: This is the incorrect call here - call should be made to self.inline instead
+                // self.inline(_token.as_ref().borrow_mut().text.as_str(), Rc::clone(&_token));
+
+                self.inline_queue.push(InlineToken {
+                    src: _token.as_ref().borrow_mut().text.clone(),
+                    token: Rc::clone(&_token)
+                });
+
+                // let mut inline_tokens: Vec<Token> = vec![];
+                // self.inline_tokens(_token.as_ref().borrow().text.as_str(), &mut inline_tokens);
+                // _token.as_ref().borrow_mut().tokens.append(&mut inline_tokens);
+
 
                 if tokens.len() > 0 {
                     let t_idx = tokens.len() - 1;
-                    let _last_token = tokens.get_mut(t_idx).unwrap();
-                    last_token = _token.clone();
+
+                    // let mut __last_token = tokens.get_mut(t_idx).unwrap();
+                    // let mut _last_token = __last_token
+                    //     .as_ref()
+                    //     .borrow_mut();
 
                     if last_paragraph_clipped &&
-                        _last_token._type == "paragraph"
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow()._type == "paragraph"
                     {
-                        _last_token.append_to_raw("\n");
-                        _last_token.append_to_raw(_token.raw.as_str());
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_raw("\n");
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_raw(_token.as_ref().borrow_mut().raw.as_str());
 
-                        _last_token.append_to_text("\n");
-                        _last_token.append_to_text(_token.text.as_str());
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text("\n");
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text(_token.as_ref().borrow_mut().text.as_str());
 
-                        self.inline_queue.remove(self.inline_queue.len() - 1);
+                        inline_tokens.remove(self.inline_queue.len() - 1);
 
                         let q_idx = self.inline_queue.len() - 1;
-                        self.inline_queue.get_mut(q_idx).unwrap().src = last_token.text.to_string();
+                        inline_tokens.get_mut(q_idx).unwrap().src = tokens.get(t_idx).unwrap().as_ref().borrow().text.to_string();
                     } else {
                         tokens.push(_token);
                     }
@@ -520,6 +658,8 @@ impl ILexer for Lexer {
                     tokens.push(_token);
                 }
 
+                // last_paragraph_token = Some(_token.clone());
+                // add_paragraph_inline_tokens= true;
                 last_paragraph_clipped = cut_src.len() != _src.len();
                 _src = String::from(&_src[idx..]);
                 continue;
@@ -531,29 +671,39 @@ impl ILexer for Lexer {
             if token.is_some() {
                 println!("Entered Text Block");
 
-                let mut _token = token.unwrap();
-                let idx = _token.raw.len();
+                let mut _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
+                    token.unwrap()
+                ));
+
+                let idx = _token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
 
-                let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                _token.tokens.append(&mut inline_tokens);
+                // TODO: This is the incorrect call here - call should be made to self.inline instead
+                // self.inline(_token.as_ref().borrow_mut().text.as_str(), Rc::clone(&_token));
+
+                self.inline_queue.push(InlineToken {
+                    src: _token.as_ref().borrow_mut().text.clone(),
+                    token: Rc::clone(&_token)
+                });
+
+                // let mut inline_tokens: Vec<Token> = vec![];
+                // self.inline_tokens(_token.as_ref().borrow().text.as_str(), &mut inline_tokens);
+                // _token.as_ref().borrow_mut().tokens.append(&mut inline_tokens);
 
                 if tokens.len() > 0 {
                     let t_idx = tokens.len() - 1;
-                    let _last_token = tokens.get_mut(t_idx).unwrap();
-                    last_token = _last_token.clone();
 
-                    if last_token._type == "text"
+                    if tokens.get_mut(t_idx).unwrap().as_ref().borrow()._type == "text"
                     {
-                        last_token.append_to_raw("\n");
-                        last_token.append_to_raw(_token.raw.as_str());
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_raw("\n");
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_raw(_token.as_ref().borrow_mut().raw.as_str());
 
-                        last_token.append_to_text("\n");
-                        last_token.append_to_text(_token.text.as_str());
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text("\n");
+                        tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text(_token.as_ref().borrow_mut().text.as_str());
 
-                        self.inline_queue.remove(self.inline_queue.len() - 1);
+                        inline_tokens.remove(self.inline_queue.len() - 1);
                         let q_idx = self.inline_queue.len() - 1;
-                        self.inline_queue[q_idx].src = last_token.text.to_string();
+                        inline_tokens[q_idx].src = tokens.get_mut(t_idx).unwrap().as_ref().borrow().text.to_string();
                     } else {
                         tokens.push(_token);
                     }
@@ -568,7 +718,7 @@ impl ILexer for Lexer {
                 let err_msg = format!("Infinite loop on byte:  {}", _src.chars().nth(0).unwrap() as u32);
 
                 if self.options.silent {
-                    // println!("Warning! {}", err_msg);
+                    println!("Warning! {}", err_msg);
                     break;
                 } else {
                     panic!("{}", err_msg);
@@ -576,9 +726,11 @@ impl ILexer for Lexer {
             }
         }
         self.state.top = true;
+        return tokens;
+        // inline_tokens.get_mut(0).unwrap().token.as_ref().borrow_mut().text = "Value of first inline token changed".to_string();
     }
 
-    fn inline_tokens<'a>(&mut self, src: &str, mut tokens: Vec<Token>) -> Vec<Token> {
+    fn inline_tokens<'a>(&mut self, src: &str, mut tokens: &'a mut Vec<Token>) -> &'a mut Vec<Token> {
 
         let mut _src: String = String::from(src);
         // todo!("Check this initialization");
@@ -593,13 +745,13 @@ impl ILexer for Lexer {
 
         // Mask out reflinks
         if self.links.len() > 0 {
-            // println!("Entered Inline Reflinks Masking");
+            println!("Entered Inline Reflinks Masking");
             let mut end_idx = 0;
             loop {
                 let match_caps = self.tokenizer.rules.inline.exec_fc(_masked_src.as_str(), MDInline::RefLinkSearch, None);
                 if match_caps.is_some() {
 
-                    // // println!("{:#?}", match_caps);
+                    // println!("{:#?}", match_caps);
                     let caps = match_caps.unwrap();
                     let end = caps.get(0).unwrap().end();
 
@@ -648,7 +800,7 @@ impl ILexer for Lexer {
         loop {
             let match_caps = self.tokenizer.rules.inline.exec_fc(_masked_src.as_str(), MDInline::BlockSkip, None);
             if match_caps.is_some() {
-                // println!("Entered Other Blocks Masking");
+                println!("Entered Other Blocks Masking");
                 let caps = match_caps.unwrap();
                 let match0 = caps.get(0).map_or("", |m| m.as_str());
 
@@ -678,7 +830,7 @@ impl ILexer for Lexer {
         loop {
             let match_caps = self.tokenizer.rules.inline.exec_fc(_masked_src.as_str(), MDInline::EscapedEmSt, None);
             if match_caps.is_some() {
-                // println!("Entered Escaped Em/Strong Delim Masking");
+                println!("Entered Escaped Em/Strong Delim Masking");
                 let caps = match_caps.unwrap();
                 let match0 = caps.get(0).map_or("", |m| m.as_str());
 
@@ -714,7 +866,7 @@ impl ILexer for Lexer {
             // escape
             token = self.tokenizer.escape(_src.as_str());
             if token.is_some() {
-                // println!("Inside Escape");
+                println!("Inside Escape");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -729,7 +881,7 @@ impl ILexer for Lexer {
             let mut in_raw_block = self.state.in_raw_block.clone();
             token = self.tokenizer.tag(_src.as_str(), &mut in_link, &mut in_raw_block);
             if token.is_some() {
-                // println!("Inside Tag");
+                println!("Inside Tag");
 
                 self.state.in_link = in_link.clone();
                 self.state.in_raw_block = in_raw_block.clone();
@@ -762,7 +914,7 @@ impl ILexer for Lexer {
             // link
             token = self.tokenizer.link(_src.as_str());
             if token.is_some() {
-                // println!("Inside Link");
+                println!("Inside Link");
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -770,8 +922,11 @@ impl ILexer for Lexer {
                 // Add tokens here
                 if _token._type == "link" {
                     self.state.in_link = true;
-                    let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                    _token.tokens.append(&mut inline_tokens);
+
+                    let mut tokens = vec![];
+                    self.inline_tokens(_token.text.as_str(), &mut tokens);
+                    _token.tokens.append(&mut tokens);
+
                     self.state.in_link = false;
                 }
 
@@ -791,8 +946,11 @@ impl ILexer for Lexer {
                 // Add tokens here
                 if _token._type == "link" {
                     self.state.in_link = true;
-                    let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                    _token.tokens.append(&mut inline_tokens);
+
+                    let mut tokens = vec![];
+                    self.inline_tokens(_token.text.as_str(), &mut tokens);
+                    _token.tokens.append(&mut tokens);
+
                     self.state.in_link = false;
                 }
 
@@ -818,13 +976,14 @@ impl ILexer for Lexer {
             // em & strong
             token = self.tokenizer.em_strong(_src.as_str(), _masked_src.as_str(), prev_char.to_string().as_str());
             if token.is_some() {
-                // println!("Inside Em/Strong");
+                println!("Inside Em/Strong");
                 let mut _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
 
-                let mut inline_tokens: Vec<Token> = self.inline_tokens(_token.text.as_str(), vec![]);
-                _token.tokens.append(&mut inline_tokens);
+                let mut tokens = vec![];
+                self.inline_tokens(_token.text.as_str(), &mut tokens);
+                _token.tokens.append(&mut tokens);
 
                 tokens.push(_token);
                 continue;
@@ -833,7 +992,7 @@ impl ILexer for Lexer {
             // code
             token = self.tokenizer.code_span(_src.as_str());
             if token.is_some() {
-                // println!("Inside Code Span");
+                println!("Inside Code Span");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -845,7 +1004,7 @@ impl ILexer for Lexer {
             // br
             token = self.tokenizer.br(_src.as_str());
             if token.is_some() {
-                // println!("Inside Br");
+                println!("Inside Br");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -857,7 +1016,7 @@ impl ILexer for Lexer {
             // del (gfm)
             token = self.tokenizer.del(_src.as_str());
             if token.is_some() {
-                // println!("Inside Del");
+                println!("Inside Del");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -870,7 +1029,7 @@ impl ILexer for Lexer {
             // autolink
             token = self.tokenizer.autolink(_src.as_str(), mangle);
             if token.is_some() {
-                // println!("Inside Autolink");
+                println!("Inside Autolink");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -883,7 +1042,7 @@ impl ILexer for Lexer {
             // url (gfm)
             token = self.tokenizer.url(_src.as_str(), mangle);
             if !self.state.in_link && token.is_some() {
-                // println!("Inside Url");
+                println!("Inside Url");
                 let _token = token.unwrap();
                 let idx = _token.raw.len();
                 _src = String::from(&_src[idx..]);
@@ -938,33 +1097,19 @@ impl ILexer for Lexer {
                 let err_msg = format!("Infinite loop on byte:  {}", _src.chars().nth(0).unwrap() as u32);
 
                 if self.options.silent {
-                    // println!("Warning! {}", err_msg);
+                    println!("Warning! {}", err_msg);
                     break;
                 } else {
                     panic!("{}", err_msg);
                 }
             }
         }
-        return tokens;
-    }
 
-    fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Token> {
-        let mut lexer = Lexer::new(options);
-        return lexer.inline_tokens(src, vec![]);
+        return tokens;
     }
 
     fn check_extensions_block(&mut self, extensions_block: Option<&'static str>) -> bool {
         return true;
-    }
-
-    fn inline(&mut self, src: String, tokens: Vec<Token>, parent_block_idx: usize) {
-        self.inline_queue.push(
-            InlineToken {
-                src,
-                tokens,
-                parent_block_idx
-            }
-        )
     }
 
     fn check_extensions_inline(&mut self, extensions_inline: Option<&'static str>) -> bool {

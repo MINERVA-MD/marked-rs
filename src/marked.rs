@@ -47,15 +47,15 @@ impl Marked {
 
         // TODO: Wrap this with error handling
         let mut lexer = Lexer::new(self.opt);
-        let tokens = lexer.lex(src);
+        let mut tokens = lexer.lex(src);
 
         if self.opt.walk_tokens.is_some() {
-            self.walk_tokens(tokens, self.opt.walk_tokens.unwrap())
+            self.walk_tokens(&mut tokens, self.opt.walk_tokens.unwrap())
         }
 
         let mut parser = Parser::new(self.opt);
 
-        parser.parse(tokens, true)
+        parser.parse(&mut tokens, true)
     }
 
     pub fn parse(&mut self, src: &str, opt: Option<Options>, callback: Option<Callback>) -> String {

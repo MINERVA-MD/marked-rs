@@ -1,7 +1,9 @@
 use std::{fmt, fs};
+use std::cell::RefCell;
 use std::cmp::min;
 use std::fmt::Formatter;
 use std::ops::Range;
+use std::rc::Rc;
 use fancy_regex::Captures;
 use regex::Regex;
 use crate::defaults::Options;
@@ -48,7 +50,6 @@ pub struct Link {
 }
 
 impl Token {
-    
     pub fn new(mut self) -> Self {
         Self {
             _type: "",
@@ -77,13 +78,14 @@ impl Token {
             code_block_style: "".to_string()
         }
     }
+
     pub fn append_to_raw(&mut self, to_append: &str) {
         self.raw.push_str(to_append);
     }
+
     pub fn append_to_text(&mut self, to_append: &str) {
         self.text.push_str(to_append);
     }
-
 }
 
 
@@ -115,7 +117,7 @@ pub trait ITokenizer {
     fn list(&mut self, src: &str) -> Option<Token>;
     fn html(&mut self, src: &str) -> Option<Token>;
     fn def(&mut self, src: &str) -> Option<Token>;
-    fn table(&mut self, src: &str, tokens: &mut Vec<InlineToken>, curr_idx: usize) -> Option<Token>;
+    fn table(&mut self, src: &str, tokens: &mut Vec<InlineToken>) -> Option<Token>;
     fn lheading(&mut self, src: &str) -> Option<Token>;
     fn paragraph(&mut self, src: &str) -> Option<Token>;
     fn text(&mut self, src: &str) -> Option<Token>;
@@ -745,11 +747,7 @@ impl ITokenizer for Tokenizer {
     fn def(&mut self, src: &str) -> Option<Token> {
         let def_caps = self.rules.block.exec_fc(src, MDBlock::Def, None);
 
-        println!("src: {}||\n\n{:#?}", src.len(), def_caps);
-
         if def_caps.is_some() {
-            // println!("Got Caps: {:#?} |", def_caps);
-
             let caps = def_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
             let cap1 = caps.get(1).map_or("", |m| m.as_str());
@@ -793,7 +791,7 @@ impl ITokenizer for Tokenizer {
         None
     }
 
-    fn table(&mut self, src: &str, mut tokens: &mut Vec<InlineToken>, curr_idx: usize) -> Option<Token> {
+    fn table(&mut self, src: &str, mut tokens: &mut Vec<InlineToken>) -> Option<Token> {
 
         let table_caps = self.rules.block.exec_fc(src, MDBlock::Table, None);
 
@@ -916,8 +914,7 @@ impl ITokenizer for Tokenizer {
                     tokens.push(
                         InlineToken {
                             src: String::from(header[j].text.as_str()),
-                            tokens: header[j].tokens.clone(),
-                            parent_block_idx: curr_idx
+                            token: Rc::new(RefCell::new(header[j].clone())),
                         }
                     );
                 }
@@ -1683,7 +1680,8 @@ impl ITokenizer for Tokenizer {
             let caps_2 = caps.get(2).map_or("", |m| m.as_str());
 
             // Put this in caller
-            let tokens = lexer.inline_tokens(caps_2, vec![]);
+            let mut tokens = vec![];
+            lexer.inline_tokens(caps_2, &mut tokens);
 
             let token = Token {
                 _type: "del",

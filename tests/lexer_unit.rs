@@ -9,16 +9,18 @@ pub fn expect_tokens(md: &str, options: Options, mut tokens: &mut Vec<Token>, li
     let mut lexer = Lexer::new(options);
     lexer.links = links;
 
-    let actual_tokens = lexer.lex(md);
+    let mut actual_tokens = lexer.lex(md);
     let expected_tokens = tokens;
 
-    pretty_assertions::assert_eq!(actual_tokens, expected_tokens);
+    pretty_assertions::assert_eq!(&mut actual_tokens, expected_tokens);
 }
 
 pub fn expect_inline_tokens(md: &str, options: Options, mut tokens: Vec<Token>, links: Vec<Link>) {
     let mut lexer = Lexer::new(options);
     lexer.links = links;
-    let mut actual_inline_tokens = lexer.inline_tokens(md, vec![]);
+
+    let mut actual_inline_tokens = vec![];
+     lexer.inline_tokens(md, &mut actual_inline_tokens);
     let expected_inline_tokens = tokens;
 
     pretty_assertions::assert_eq!(actual_inline_tokens, expected_inline_tokens);
@@ -27,7 +29,10 @@ pub fn expect_inline_tokens(md: &str, options: Options, mut tokens: Vec<Token>, 
 pub fn expect_mangle_email(md: &str, options: Options, mut tokens: Vec<Token>, links: Vec<Link>) {
     let mut lexer = Lexer::new(options);
     lexer.links = links;
-    let mut actual_inline_tokens = lexer.inline_tokens(md, vec![]);
+
+
+    let mut actual_inline_tokens = vec![];
+    lexer.inline_tokens(md, &mut actual_inline_tokens);
     let expected_inline_tokens = tokens;
 
     let actual_token = actual_inline_tokens.get(0).unwrap();
