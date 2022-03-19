@@ -1,15 +1,18 @@
 use std::fs;
 use test_case::test_case;
+
+use marked_rs::token::Token;
+use marked_rs::tokenizer::{Link};
 use marked_rs::defaults::Options;
 use marked_rs::lexer::{ILexer, Lexer};
-use marked_rs::tokenizer::{Link, Token};
 use pretty_assertions::{assert_eq, assert_ne};
+
 
 pub fn expect_tokens(md: &str, options: Options, mut tokens: &mut Vec<Token>, links: Vec<Link>) {
     let mut lexer = Lexer::new(options);
     lexer.links = links;
 
-    let mut actual_tokens = lexer.lex(md);
+    let mut actual_tokens = lexer.lex_ac(md);
     let expected_tokens = tokens;
 
     pretty_assertions::assert_eq!(&mut actual_tokens, expected_tokens);
@@ -19,11 +22,15 @@ pub fn expect_inline_tokens(md: &str, options: Options, mut tokens: Vec<Token>, 
     let mut lexer = Lexer::new(options);
     lexer.links = links;
 
-    let mut actual_inline_tokens = vec![];
-     lexer.inline_tokens(md, &mut actual_inline_tokens);
-    let expected_inline_tokens = tokens;
+    let mut inline_tokens = vec![];
+     lexer.inline_tokens(md, &mut inline_tokens);
 
-    pretty_assertions::assert_eq!(actual_inline_tokens, expected_inline_tokens);
+    // println!("Logging inline_tokens ======= {:#?}", inline_tokens);
+
+    let expected_inline_tokens = tokens;
+    let actual_inline_tokens_ac = Lexer::capture_tokens_ac(&mut inline_tokens);
+
+    pretty_assertions::assert_eq!(actual_inline_tokens_ac, expected_inline_tokens);
 }
 
 pub fn expect_mangle_email(md: &str, options: Options, mut tokens: Vec<Token>, links: Vec<Link>) {
@@ -31,11 +38,13 @@ pub fn expect_mangle_email(md: &str, options: Options, mut tokens: Vec<Token>, l
     lexer.links = links;
 
 
-    let mut actual_inline_tokens = vec![];
-    lexer.inline_tokens(md, &mut actual_inline_tokens);
-    let expected_inline_tokens = tokens;
+    let mut inline_tokens = vec![];
+    lexer.inline_tokens(md, &mut inline_tokens);
 
-    let actual_token = actual_inline_tokens.get(0).unwrap();
+    let expected_inline_tokens = tokens;
+    let actual_inline_tokens_ac = Lexer::capture_tokens_ac(&mut inline_tokens);
+
+    let actual_token = actual_inline_tokens_ac.get(0).unwrap();
     let expected_token =  expected_inline_tokens.get(0).unwrap();
 
     let text_re = fancy_regex::Regex::new(r#"^(&#x?[0-9a-f]+;)+$"#).unwrap();

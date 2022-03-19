@@ -73,6 +73,6 @@ macro_rules! spec_test {
 
 // 651
 
-spec_test!("tests/fixtures/marked-specs/commonmark/commonmark.0.30.json", 0, 300);
+spec_test!("tests/fixtures/marked-specs/commonmark/commonmark.0.30.json", 0, 10);
 
 

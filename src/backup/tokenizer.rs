@@ -1,16 +1,15 @@
-use std::rc::Rc;
-use regex::Regex;
-use std::cmp::min;
 use std::{fmt, fs};
-use std::ops::Range;
-use std::fmt::Formatter;
-use fancy_regex::Captures;
 use std::cell::{Ref, RefCell};
-
+use std::cmp::min;
+use std::fmt::Formatter;
+use std::ops::Range;
+use std::rc::Rc;
+use fancy_regex::Captures;
+use regex::Regex;
 use crate::defaults::Options;
-use crate::lexer::{ILexer, InlineToken, Lexer, regx};
-use crate::rules::{get_rules, MDBlock, MDInline, Rules};
 use crate::helpers::{escape, find_closing_bracket, rtrim, split_cells};
+use crate::rules::{get_rules, MDBlock, MDInline, Rules};
+use crate::lexer::{ILexer, InlineToken, Lexer, regx};
 
 
 #[derive(Clone, PartialEq, Debug)]
@@ -1680,9 +1679,15 @@ impl ITokenizer for Tokenizer {
         if del_caps.is_some() &&
             self.rules.inline.del != ""
         {
+            // TODO: pass in lexer as arg instead
+            let mut lexer = Lexer::new(self.options);
             let caps = del_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
             let caps_2 = caps.get(2).map_or("", |m| m.as_str());
+
+            // TODO: Put this in caller =================================
+            let mut tokens = vec![];
+            lexer.inline_tokens(caps_2, &mut tokens);
 
             let token = Token {
                 _type: "del",

@@ -1,7 +1,6 @@
-use std::rc::Rc;
-use std::cell::RefCell;
 use std::borrow::{Borrow, BorrowMut};
-
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::tokenizer::Token;
 use crate::slugger::Slugger;
 use crate::defaults::Options;
@@ -400,6 +399,7 @@ impl IParser for Parser {
 
                 "del"           => {
                     let _text = self.parse_inline(&mut token.as_ref().borrow_mut().tokens, renderer);
+                    println!("Del: {}", _text);
                     out.push_str(renderer.del(_text.as_str()).as_str());
                     continue;
                 }
