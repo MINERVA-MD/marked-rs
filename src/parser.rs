@@ -64,8 +64,11 @@ impl IParser for Parser {
             }
 
             token = tokens.get_mut(i).unwrap();
+            let mut _type = "";
 
-            let _type = token.as_ref().borrow()._type.clone();
+            {
+                _type = token.as_ref().borrow()._type.clone();
+            }
 
             match _type {
                 "space"         => {
@@ -80,92 +83,126 @@ impl IParser for Parser {
                 }
 
                 "heading"       => {
-                    let text = self.parse_inline(&mut token.as_ref().borrow_mut().tokens, Renderer::new(self.options));
-                    let level = token.as_ref().borrow().depth;
-                    let _raw = self.parse_inline_tr(&mut token.as_ref().borrow_mut().tokens, TextRenderer::new());
-                    let raw = unescape(_raw.as_str());
-                    let _out = self.renderer.heading(text.as_str(), level, raw.as_str(), &mut self.slugger);
 
-                    out.push_str(_out.as_str());
+                    {
+                        let mut heading_token_rc = token.as_ref().borrow_mut();
+
+
+                        let text =  {
+                            self.parse_inline(&mut heading_token_rc.tokens, Renderer::new(self.options))
+                        };
+
+                        let level = {
+                            heading_token_rc.depth
+                        };
+
+                        let _raw = {
+                            self.parse_inline_tr(&mut heading_token_rc.tokens, TextRenderer::new())
+                        };
+
+                        let raw = unescape(_raw.as_str());
+                        let _out = self.renderer.heading(text.as_str(), level, raw.as_str(), &mut self.slugger);
+
+                        out.push_str(_out.as_str());
+                    }
+
                     i += 1;
                     continue;
                 }
 
                 "code"          => {
-                    out.push_str(self.renderer.code(
-                        token.as_ref().borrow_mut().text.as_str(),
-                        token.as_ref().borrow().lang.as_str(),
-                        token.as_ref().borrow_mut().escaped
-                    ).as_str());
+
+                    {
+                        let mut code_token_rc = token.as_ref().borrow_mut();
+
+                        {
+                            out.push_str(self.renderer.code(
+                                code_token_rc.text.as_str(),
+                                code_token_rc.lang.as_str(),
+                                code_token_rc.escaped
+                            ).as_str());
+                        }
+                    }
+
                     i += 1;
                     continue;
                 }
 
                 "table"         => {
-                    header = "".to_string();
+                    {
+                        let mut table_token = token.as_ref().borrow_mut();
+                        header = "".to_string();
 
-                    // header
-                    cell = "".to_string();
-                    l2 = token.as_ref().borrow().header.len();
-
-                    for j in 0..l2{
-                        let mut _curr_token = token.as_ref().borrow_mut();
-                        let curr_token = _curr_token.header.get_mut(j).unwrap();
-                        let header_tokens = &mut curr_token.as_ref().borrow_mut().tokens;
-                        let flags = Flags {
-                            header: true,
-                            align: token.as_ref().borrow().align[j].clone()
-                        };
-
-                        let content = self.parse_inline(header_tokens, self.renderer);
-                        let cells = self.renderer.tablecell(content.as_str(), flags);
-
-                        cell = format!("{}{}",
-                                       cell,
-                                       cells
-                        );
-                    }
-
-                    header = format!("{}{}",
-                                     header,
-                                     self.renderer.tablerow(cell.as_str())
-                    );
-
-                    body = "".to_string();
-                    l2 = token.as_ref().borrow().rows.len();
-
-                    for j in 0..l2 {
-                        let mut _row = token.as_ref().borrow_mut();
-                        row = _row.rows.get_mut(j).unwrap();
-
+                        // header
                         cell = "".to_string();
-                        l3 = row.len();
+                        l2 = table_token.header.len();
 
-                        for k in 0..l3 {
-                            let curr_token = row.get_mut(k).unwrap();
-                            let row_tokens = &mut curr_token.as_ref().borrow_mut().tokens;
-                            let flags = Flags {
-                                header: false,
-                                align: token.as_ref().borrow().align[k].clone()
-                            };
+                        for j in 0..l2 {
+                            {
+                                let header_tokens = &mut table_token.header[j].as_ref().borrow_mut().tokens;
 
-                            let content = self.parse_inline(row_tokens, self.renderer);
-                            let cells = self.renderer.tablecell(content.as_str(), flags);
+                                let align = table_token.align[j].clone();
 
-                            cell = format!("{}{}",
-                                           cell,
-                                           cells
-                            );
+                                let flags = Flags {
+                                    header: true,
+                                    align
+                                };
+
+                                let content = self.parse_inline(header_tokens, self.renderer);
+                                let cells = self.renderer.tablecell(content.as_str(), flags);
+
+                                cell = format!("{}{}",
+                                               cell,
+                                               cells
+                                );
+                            }
                         }
-                        body = format!("{}{}",
-                                       body,
-                                       self.renderer.tablerow(cell.as_str())
+
+                        header = format!("{}{}",
+                                         header,
+                                         self.renderer.tablerow(cell.as_str())
+                        );
+
+                        body = "".to_string();
+                        l2 = table_token.rows.len();
+
+                        for j in 0..l2 {
+                            {
+                                let mut aligns = table_token.align.clone();
+                                row = table_token.rows.get_mut(j).unwrap();
+
+                                cell = "".to_string();
+                                l3 = row.len();
+
+                                for k in 0..l3 {
+
+                                    let curr_token = row.get_mut(k).unwrap();
+                                    let row_tokens = &mut curr_token.as_ref().borrow_mut().tokens;
+
+                                    let flags = Flags {
+                                        header: false,
+                                        align: aligns[k].clone()
+                                    };
+
+                                    let content = self.parse_inline(row_tokens, self.renderer);
+                                    let cells = self.renderer.tablecell(content.as_str(), flags);
+
+                                    cell = format!("{}{}",
+                                                   cell,
+                                                   cells
+                                    );
+                                }
+                                body = format!("{}{}",
+                                               body,
+                                               self.renderer.tablerow(cell.as_str())
+                                );
+                            }
+                        }
+                        out = format!("{}{}",
+                                      out,
+                                      self.renderer.table(header.as_str(), body.as_str())
                         );
                     }
-                    out = format!("{}{}",
-                                  out,
-                                  self.renderer.table(header.as_str(), body.as_str())
-                    );
                     i += 1;
                     continue;
                 }
@@ -178,15 +215,16 @@ impl IParser for Parser {
                 }
 
                 "list"          => {
-                    ordered = token.as_ref().borrow().ordered.clone();
-                    start = token.as_ref().borrow().start.clone();
-                    loose = token.as_ref().borrow().loose.clone();
-                    l2 = token.as_ref().borrow().items.len();
+                    let mut list_token = token.as_ref().borrow_mut();
+
+                    ordered = list_token.ordered.clone();
+                    start = list_token.start.clone();
+                    loose = list_token.loose.clone();
+                    l2 = list_token.items.len();
 
                     body = "".to_string();
                     for j in 0..l2 {
-                        let mut _item = token.as_ref().borrow_mut();
-                        item = _item.items.get_mut(j).unwrap();
+                        item = list_token.items.get_mut(j).unwrap();
                         checked = item.as_ref().borrow().checked.clone();
 
                         item_body = "".to_string();
@@ -346,50 +384,85 @@ impl IParser for Parser {
 
             token = tokens.get_mut(i).unwrap();
 
-            match token.as_ref().borrow()._type {
+            let mut _type = "";
+
+            {
+                _type = token.as_ref().borrow()._type.clone();
+            }
+
+            match _type {
                 "escape"        => {
-                    out.push_str(renderer.text(token.as_ref().borrow().text.as_str()).as_str());
+                    {
+                        let escape_token = token.as_ref().borrow();
+                        out.push_str(renderer.text(escape_token.text.as_str()).as_str());
+                    }
+
                     continue;
                 }
 
                 "html"          => {
-                    out.push_str(renderer.html(token.as_ref().borrow().text.as_str()).as_str());
+                    {
+                        let html_token = token.as_ref().borrow();
+                        out.push_str(renderer.html(html_token.text.as_str()).as_str());
+                    }
                     continue;
                 }
 
                 "link"          => {
-                    let _text = self.parse_inline(&mut token.as_ref().borrow_mut().tokens, renderer);
-                    out.push_str(renderer.link(
-                        token.as_ref().borrow().href.as_str(),
-                        token.as_ref().borrow().title.as_str(),
-                        _text.as_str()
-                    ).as_str());
+
+                    {
+                        let mut link_token = token.as_ref().borrow_mut();
+                        let _text = self.parse_inline(&mut link_token.tokens, renderer);
+
+                        out.push_str(renderer.link(
+                            link_token.href.as_str(),
+                            link_token.title.as_str(),
+                            _text.as_str()
+                        ).as_str());
+                    }
+
                     continue;
                 }
 
                 "image"         => {
-                    out.push_str(renderer.image(
-                        token.as_ref().borrow().href.as_str(),
-                        token.as_ref().borrow().title.as_str(),
-                        token.as_ref().borrow().text.as_str()
-                    ).as_str());
+
+                    {
+                        let mut image_token = token.as_ref().borrow();
+
+                        out.push_str(renderer.image(
+                            image_token.href.as_str(),
+                            image_token.title.as_str(),
+                            image_token.text.as_str()
+                        ).as_str());
+                    }
+
                     continue;
                 }
 
                 "strong"        => {
-                    let _text = self.parse_inline(&mut token.as_ref().borrow_mut().tokens, renderer);
-                    out.push_str(renderer.strong(_text.as_str()).as_str());
+                    {
+                        let mut strong_token = token.as_ref().borrow_mut();
+                        let _text = self.parse_inline(&mut strong_token.tokens, renderer);
+                        out.push_str(renderer.strong(_text.as_str()).as_str());
+                    }
+
                     continue;
                 }
 
                 "em"            => {
-                    let _text = self.parse_inline(&mut token.as_ref().borrow_mut().tokens, renderer);
-                    out.push_str(renderer.em(_text.as_str()).as_str());
+                    {
+                        let mut em_token = token.as_ref().borrow_mut();
+                        let _text = self.parse_inline(&mut em_token.tokens, renderer);
+                        out.push_str(renderer.em(_text.as_str()).as_str());
+                    }
                     continue;
                 }
 
                 "codespan"      => {
-                    out.push_str(renderer.codespan(token.as_ref().borrow().text.as_str()).as_str());
+                    {
+                        let codespan_token = token.as_ref().borrow();
+                        out.push_str(renderer.codespan(codespan_token.text.as_str()).as_str());
+                    }
                     continue;
                 }
 
@@ -399,13 +472,22 @@ impl IParser for Parser {
                 }
 
                 "del"           => {
-                    let _text = self.parse_inline(&mut token.as_ref().borrow_mut().tokens, renderer);
-                    out.push_str(renderer.del(_text.as_str()).as_str());
+
+                    {
+                        let mut del_token = token.as_ref().borrow_mut();
+                        let _text = self.parse_inline(&mut del_token.tokens, renderer);
+                        out.push_str(renderer.del(_text.as_str()).as_str());
+                    }
+
                     continue;
                 }
 
                 "text"          => {
-                    out.push_str(renderer.text(token.as_ref().borrow().text.as_str()).as_str());
+                    {
+                        let text_token = token.as_ref().borrow();
+                        out.push_str(renderer.text(text_token.text.as_str()).as_str());
+                    }
+
                     continue;
                 }
 
@@ -437,50 +519,81 @@ impl IParser for Parser {
 
             token = tokens.get_mut(i).unwrap();
 
-            match token.as_ref().borrow()._type {
+            let mut _type = "";
+
+            {
+                _type = token.as_ref().borrow()._type.clone();
+            }
+
+            match _type {
                 "escape"        => {
-                    out.push_str(renderer.text(token.as_ref().borrow().text.as_str()).as_str());
+                    {
+                        let escape_token = token.as_ref().borrow();
+                        out.push_str(renderer.text(escape_token.text.as_str()).as_str());
+                    }
+
                     break;
                 }
 
                 "html"          => {
-                    out.push_str(renderer.html(token.as_ref().borrow().text.as_str()).as_str());
+                    {
+                        let html_token = token.as_ref().borrow();
+                        out.push_str(renderer.html(html_token.text.as_str()).as_str());
+                    }
+
                     break;
                 }
 
                 "link"          => {
-                    let _text = self.parse_inline_tr(&mut token.as_ref().borrow_mut().tokens, renderer);
-                    out.push_str(renderer.link(
-                        token.as_ref().borrow().href.as_str(),
-                        token.as_ref().borrow().title.as_str(),
-                        _text.as_str()
-                    ).as_str());
+
+                    {
+                        let mut link_token = token.as_ref().borrow_mut();
+                        let _text = self.parse_inline_tr(&mut link_token.tokens, renderer);
+                        out.push_str(renderer.link(
+                            link_token.href.as_str(),
+                            link_token.title.as_str(),
+                            _text.as_str()
+                        ).as_str());
+                    }
+
                     break;
                 }
 
                 "image"         => {
-                    out.push_str(renderer.image(
-                        token.as_ref().borrow().href.as_str(),
-                        token.as_ref().borrow().title.as_str(),
-                        token.as_ref().borrow().text.as_str()
-                    ).as_str());
+                    {
+                        let image_token = token.as_ref().borrow();
+                        out.push_str(renderer.image(
+                            image_token.href.as_str(),
+                            image_token.title.as_str(),
+                            image_token.text.as_str()
+                        ).as_str());
+                    }
                     break;
                 }
 
                 "strong"        => {
-                    let _text = self.parse_inline_tr(&mut token.as_ref().borrow_mut().tokens, renderer);
-                    out.push_str(renderer.strong(_text.as_str()).as_str());
+                    {
+                        let mut strong_token = token.as_ref().borrow_mut();
+                        let _text = self.parse_inline_tr(&mut strong_token.tokens, renderer);
+                        out.push_str(renderer.strong(_text.as_str()).as_str());
+                    }
                     break;
                 }
 
                 "em"            => {
-                    let _text = self.parse_inline_tr(&mut token.as_ref().borrow_mut().tokens, renderer);
-                    out.push_str(renderer.em(_text.as_str()).as_str());
+                    {
+                        let mut em_token = token.as_ref().borrow_mut();
+                        let _text = self.parse_inline_tr(&mut em_token.tokens, renderer);
+                        out.push_str(renderer.em(_text.as_str()).as_str());
+                    }
                     break;
                 }
 
                 "codespan"      => {
-                    out.push_str(renderer.codespan(token.as_ref().borrow().text.as_str()).as_str());
+                    {
+                        let codespan_token = token.as_ref().borrow();
+                        out.push_str(renderer.codespan(codespan_token.text.as_str()).as_str());
+                    }
                     break;
                 }
 
@@ -490,13 +603,19 @@ impl IParser for Parser {
                 }
 
                 "del"           => {
-                    let _text = self.parse_inline_tr(&mut token.as_ref().borrow_mut().tokens, renderer);
-                    out.push_str(renderer.del(_text.as_str()).as_str());
+                    {
+                        let mut del_token = token.as_ref().borrow_mut();
+                        let _text = self.parse_inline_tr(&mut del_token.tokens, renderer);
+                        out.push_str(renderer.del(_text.as_str()).as_str());
+                    }
                     break;
                 }
 
                 "text"          => {
-                    out.push_str(renderer.text(token.as_ref().borrow().text.as_str()).as_str());
+                    {
+                        let text_token = token.as_ref().borrow();
+                        out.push_str(renderer.text(text_token.text.as_str()).as_str());
+                    }
                     break;
                 }
 

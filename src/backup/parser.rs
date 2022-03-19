@@ -1,6 +1,7 @@
-use std::borrow::{Borrow, BorrowMut};
-use std::cell::RefCell;
 use std::rc::Rc;
+use std::cell::RefCell;
+use std::borrow::{Borrow, BorrowMut};
+
 use crate::tokenizer::Token;
 use crate::slugger::Slugger;
 use crate::defaults::Options;
@@ -216,34 +217,34 @@ impl IParser for Parser {
                                     }
                                 } else {
                                     item.as_ref().borrow_mut().tokens.insert(0,
-                                                       Rc::new(RefCell::new(
-                                                           Token {
-                                                               _type: "text",
-                                                               raw: "".to_string(),
-                                                               href: "".to_string(),
-                                                               title: "".to_string(),
-                                                               text: checkbox.clone(),
-                                                               tokens: vec![],
-                                                               tag: "".to_string(),
-                                                               ordered,
-                                                               start,
-                                                               lang: "".to_string(),
-                                                               loose,
-                                                               items: vec![],
-                                                               depth: 0,
-                                                               escaped: false,
-                                                               pre: false,
-                                                               task,
-                                                               checked,
-                                                               in_link: false,
-                                                               in_raw_block: false,
-                                                               links: vec![],
-                                                               align: vec![],
-                                                               rows: vec![],
-                                                               header: vec![],
-                                                               code_block_style: "".to_string()
-                                                           }
-                                                       )))
+                                                                             Rc::new(RefCell::new(
+                                                                                 Token {
+                                                                                     _type: "text",
+                                                                                     raw: "".to_string(),
+                                                                                     href: "".to_string(),
+                                                                                     title: "".to_string(),
+                                                                                     text: checkbox.clone(),
+                                                                                     tokens: vec![],
+                                                                                     tag: "".to_string(),
+                                                                                     ordered,
+                                                                                     start,
+                                                                                     lang: "".to_string(),
+                                                                                     loose,
+                                                                                     items: vec![],
+                                                                                     depth: 0,
+                                                                                     escaped: false,
+                                                                                     pre: false,
+                                                                                     task,
+                                                                                     checked,
+                                                                                     in_link: false,
+                                                                                     in_raw_block: false,
+                                                                                     links: vec![],
+                                                                                     align: vec![],
+                                                                                     rows: vec![],
+                                                                                     header: vec![],
+                                                                                     code_block_style: "".to_string()
+                                                                                 }
+                                                                             )))
                                 }
                             } else {
                                 item_body = format!("{}{}",
@@ -399,7 +400,6 @@ impl IParser for Parser {
 
                 "del"           => {
                     let _text = self.parse_inline(&mut token.as_ref().borrow_mut().tokens, renderer);
-                    println!("Del: {}", _text);
                     out.push_str(renderer.del(_text.as_str()).as_str());
                     continue;
                 }

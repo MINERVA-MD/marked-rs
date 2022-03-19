@@ -42,7 +42,6 @@ pub struct Token {
 }
 
 
-
 #[derive(Clone, PartialEq, Debug)]
 pub struct Link {
     pub href: String,

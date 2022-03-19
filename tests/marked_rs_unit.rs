@@ -131,7 +131,8 @@ mod marked {
         let mut lexer = Lexer::new(options);
         let md = "A Paragraph.\n\n> A blockquote\n\n- list item\n";
 
-        let tokens = lexer.lex(md);
+        let mut p_tokens = lexer.lex(md);
+        let tokens = Lexer::capture_tokens_ac(&mut p_tokens);
 
         pretty_assertions::assert_eq!(tokens[0]._type, "paragraph");
         pretty_assertions::assert_eq!(tokens[2].tokens[0]._type, "paragraph");
@@ -145,11 +146,11 @@ mod marked {
             test();
         });
 
-        if result.is_ok() {
-            println!("Should not occur");
-        } else {
-            println!("Caught panic");
-        }
+        // if result.is_ok() {
+        //     println!("Should not occur");
+        // } else {
+        //     println!("Caught panic");
+        // }
     }
 
     #[test]

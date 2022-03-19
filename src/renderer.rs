@@ -200,7 +200,6 @@ impl IRenderer for Renderer {
     fn link(&mut self, href: &str, title: &str, text: &str) -> String {
         let _href = clean_url(self.options.sanitize, self.options.base_url, href);
 
-        println!("Href here: {}", _href);
         if _href == "" {
             return String::from(text);
         }
