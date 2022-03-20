@@ -8,6 +8,11 @@ lazy_static! {
     static ref CARET: regex::Regex = regex::Regex::new("(^|[^\\[])\\^").unwrap();
 }
 
+pub enum RegexGlobalOpt {
+    CaseInsensitive,
+    MultiLine
+}
+
 pub enum MDBlock {
     Newline,
     Code,
@@ -202,7 +207,7 @@ impl Block {
     }
 
 
-    pub fn get_grammar_fc_regex(&self, rule: MDBlock, opt: Option<&str>) -> fancy_regex::Regex {
+    pub fn get_grammar_fc_regex(&self, rule: MDBlock, opt: Option<RegexGlobalOpt>) -> fancy_regex::Regex {
         match rule {
             MDBlock::Newline        => fancy_regex::Regex::new(self.newline.as_str()).unwrap(),
             MDBlock::Code           => fancy_regex::Regex::new(self.code.as_str()).unwrap(),
@@ -211,7 +216,11 @@ impl Block {
             MDBlock::Heading        => fancy_regex::Regex::new(self.heading.as_str()).unwrap(),
             MDBlock::Blockquote     => fancy_regex::Regex::new(self.blockquote.as_str()).unwrap(),
             MDBlock::List           => fancy_regex::Regex::new(self.list.as_str()).unwrap(),
-            MDBlock::Html           => fancy_regex::Regex::new(self.html.as_str()).unwrap(),
+            MDBlock::Html           => {
+                let html = format!("{}{}", "(?i)", self.html);
+                fancy_regex::Regex::new(html.as_str()).unwrap()
+                // fancy_regex::Regex::new(self.html.as_str()).unwrap()
+            },
             MDBlock::Def            => fancy_regex::Regex::new(self.def.as_str()).unwrap(),
             MDBlock::Table          => fancy_regex::Regex::new(self.table.as_str()).unwrap(),
             MDBlock::LHeading       => fancy_regex::Regex::new(self.l_heading.as_str()).unwrap(),
@@ -226,7 +235,7 @@ impl Block {
         }
     }
 
-    pub fn exec_fc<'a>(&self, src: &'a str, rule: MDBlock, opt: Option<&'a str>) -> Option<fancy_regex::Captures<'a>> {
+    pub fn exec_fc<'a>(&self, src: &'a str, rule: MDBlock, opt: Option<RegexGlobalOpt>) -> Option<fancy_regex::Captures<'a>> {
         self.get_grammar_fc_regex(rule, opt).captures(src).unwrap()
     }
 }

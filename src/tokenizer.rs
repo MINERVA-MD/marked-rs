@@ -698,10 +698,39 @@ impl ITokenizer for Tokenizer {
     fn html(&mut self, src: &str) -> Option<Token> {
         let html_caps = self.rules.block.exec_fc(src, MDBlock::Html, None);
 
+        // let html_re =  self.rules.block.html.as_str();
+        // let html_caps = onig::Regex::new(html_re)
+        //     .unwrap()
+        //     .captures(src);
+
         if html_caps.is_some() {
             let caps = html_caps.unwrap();
+            // let (r_start, r_end) = caps.pos(0).unwrap();
+            //
+            // // let raw = &src[r_start..r_end + 1];
+            //
+            // let raw = if caps.at(1).is_some() {
+            //     let (r_start, r_end) = caps.pos(0).unwrap();
+            //     &src[r_start..r_end + 1]
+            // } else {
+            //     ""
+            // };
+            //
+            // let cap_1 = if caps.at(1).is_some() {
+            //     let (c1_start, c1_end) = caps.pos(1).unwrap();
+            //     &src[c1_start..c1_end + 1]
+            // } else {
+            //     ""
+            // };
+
+
+
+            // let raw = caps.at(0).map_or("", |m| m);
+            // let cap_1 = caps.at(1).map_or("", |m| m);
+
             let raw = caps.get(0).map_or("", |m| m.as_str());
-            let cap_1 = caps.get(1).map_or("", |m| m.as_str());
+            let cap_1 = caps.get(0).map_or("", |m| m.as_str());
+
 
             let pre = !self.options.sanitizer.is_some() &&
                 cap_1 == "pre" ||
@@ -1139,7 +1168,7 @@ impl ITokenizer for Tokenizer {
 
             if !*in_link && regx(r#"(?i)^<a "#).is_match(raw) {
                 *in_link = true;
-            } else if *in_link && regx(r#"(?i)^<\/a>"#).is_match(raw) {
+            } else if *in_link && regx(r#"(?i)^<\\/a>"#).is_match(raw) {
                 *in_link = false;
             }
 
@@ -1210,13 +1239,13 @@ impl ITokenizer for Tokenizer {
                 if !regx(r#">$"#).is_match(trimmed_url) {
                     return None;
                 }
-            }
 
-            let trimmed_url_slice = &trimmed_url[..trimmed_url.len() - 1];
-            let rtrim_slash = rtrim(trimmed_url_slice, "\\", false);
+                let trimmed_url_slice = &trimmed_url[..trimmed_url.len() - 1];
+                let rtrim_slash = rtrim(trimmed_url_slice, "\\", false);
 
-            if (trimmed_url.len() - rtrim_slash.len()) % 2 == 0 {
-                return None;
+                if (trimmed_url.len() - rtrim_slash.len()) % 2 == 0 {
+                    return None;
+                }
             } else {
                 // find closing parenthesis
                 let last_paren_idx = find_closing_bracket(cap2, "()");
@@ -1239,6 +1268,8 @@ impl ITokenizer for Tokenizer {
                     cap3 = "";
                 }
             }
+
+
             let mut _href = cap2;
             let mut _title = "";
             if self.options.pedantic {
@@ -1923,6 +1954,8 @@ impl ITokenizer for Tokenizer {
                 text = escape(html.as_str(), false);
             }
 
+            // println!("Text: {} | Raw: {}", text, raw);
+
             let token =
                 Token {
                 _type: "text",
@@ -1940,11 +1973,11 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
-                    task: false,
-                    checked: false,
-                    in_link: false,
-                    in_raw_block,
-                    links: vec![],
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block,
+                links: vec![],
                 align: vec![],
                 rows: vec![],
                 header: vec![],

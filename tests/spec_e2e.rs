@@ -43,7 +43,7 @@ macro_rules! spec_test {
             seq!(N in $from..$to {
 
                 #(#[test_case(N + 1)])*
-                #[timeout(5000)]
+                #[timeout(25000)]
                 fn verify_specs(index: usize) {
                     let specs: Vec<Spec> = get_specs();
                     let spec: &Spec = &specs[index];
@@ -62,6 +62,7 @@ macro_rules! spec_test {
                     let actual_html = marked.parse(md, Some(options), None);
 
                     if !(*spec_should_fail) {
+                        // println!("Expected: {} | \nAcutal  : {}", *expected_marked_html, actual_html);
                         pretty_assertions::assert_eq!(*expected_marked_html, actual_html)
                     }
                 }
@@ -73,6 +74,6 @@ macro_rules! spec_test {
 
 // 651
 
-spec_test!("tests/fixtures/marked-specs/commonmark/commonmark.0.30.json", 0, 500);
+spec_test!("tests/fixtures/marked-specs/commonmark/commonmark.0.30.json", 0, 651);
 
 
