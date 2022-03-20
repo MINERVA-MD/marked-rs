@@ -62,7 +62,7 @@ macro_rules! spec_test {
                     let actual_html = marked.parse(md, Some(options), None);
 
                     if !(*spec_should_fail) {
-                        // println!("Expected: {} | \nAcutal  : {}", *expected_marked_html, actual_html);
+                        //println!("Expected: {} | \nAcutal  : {}", *expected_marked_html, actual_html);
                         pretty_assertions::assert_eq!(*expected_marked_html, actual_html)
                     }
                 }
@@ -74,6 +74,6 @@ macro_rules! spec_test {
 
 // 651
 
-spec_test!("tests/fixtures/marked-specs/commonmark/commonmark.0.30.json", 0, 200);
+spec_test!("tests/fixtures/marked-specs/commonmark/commonmark.0.30.json", 0, 400);
 
 

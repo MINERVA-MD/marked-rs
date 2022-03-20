@@ -309,6 +309,9 @@ impl ILexer for Lexer {
         let mut _tokens = vec![];
         let mut tokens: &mut Vec<Rc<RefCell<Token>>> = self.block_tokens(new_src.as_str(), &mut _tokens);
 
+
+        // // println!("{:#?}", tokens);
+
         while self.inline_queue.len() > 0 {
             let next = self.inline_queue.remove(0);
             let i_tokens = &mut next.token.as_ref().borrow_mut().tokens;
@@ -316,8 +319,10 @@ impl ILexer for Lexer {
                 next.src.as_str(),
                 i_tokens
             );
-            // // println!("Tokens for {} ==> {:#?}", next.src.as_str(), i_tokens);
+            // println!("Tokens for {} ==> {:#?}", next.src.as_str(), i_tokens);
         }
+
+        // println!("{:#?}", tokens);
 
         self.tokens.append(&mut tokens);
         self.capture_tokens()
@@ -737,10 +742,11 @@ impl ILexer for Lexer {
                         tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text("\n");
                         tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text(_token.as_ref().borrow_mut().text.as_str());
 
-                        inline_tokens.remove(self.inline_queue.len() - 1);
+                        // println!("Removing last token");
+                        self.inline_queue.remove(self.inline_queue.len() - 1);
 
                         let q_idx = self.inline_queue.len() - 1;
-                        inline_tokens.get_mut(q_idx).unwrap().src = tokens.get(t_idx).unwrap().as_ref().borrow().text.to_string();
+                        self.inline_queue.get_mut(q_idx).unwrap().src = tokens.get(t_idx).unwrap().as_ref().borrow().text.to_string();
                     } else {
                         tokens.push(_token);
                     }
@@ -748,8 +754,6 @@ impl ILexer for Lexer {
                     tokens.push(_token);
                 }
 
-                // last_paragraph_token = Some(_token.clone());
-                // add_paragraph_inline_tokens= true;
                 last_paragraph_clipped = cut_src.len() != _src.len();
                 _src = String::from(&_src[idx..]);
                 continue;
@@ -783,9 +787,10 @@ impl ILexer for Lexer {
                         tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text("\n");
                         tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text(_token.as_ref().borrow_mut().text.as_str());
 
-                        inline_tokens.remove(self.inline_queue.len() - 1);
+                        // println!("Removing last token from text block");
+                        self.inline_queue.remove(self.inline_queue.len() - 1);
                         let q_idx = self.inline_queue.len() - 1;
-                        inline_tokens[q_idx].src = tokens.get_mut(t_idx).unwrap().as_ref().borrow().text.to_string();
+                        self.inline_queue[q_idx].src = tokens.get_mut(t_idx).unwrap().as_ref().borrow().text.to_string();
                     } else {
                         tokens.push(_token);
                     }
@@ -1059,7 +1064,7 @@ impl ILexer for Lexer {
             // em & strong
             token = self.tokenizer.em_strong(_src.as_str(), _masked_src.as_str(), prev_char.to_string().as_str());
             if token.is_some() {
-                // println!("Inside Em/Strong");
+
                 let em_strong_token = Rc::new(RefCell::new(token.unwrap()));
                 let idx = em_strong_token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
@@ -1067,6 +1072,9 @@ impl ILexer for Lexer {
                 let mut em_tokens = vec![];
                 self.inline_tokens(em_strong_token.as_ref().borrow().text.as_str(), &mut em_tokens);
                 em_strong_token.as_ref().borrow_mut().tokens.append(&mut em_tokens);
+
+                // println!("Inside Em/Strong");
+
 
                 tokens.push(em_strong_token);
                 continue;
@@ -1162,6 +1170,7 @@ impl ILexer for Lexer {
                 if last_char != '_' {
                     // Track prevChar before string of ____ started
                     prev_char = last_char.to_string();
+                    // // println!("PrevChar: {} {}", prev_char, prev_char.len())
                 }
 
                 _keep_prev_char = true;
