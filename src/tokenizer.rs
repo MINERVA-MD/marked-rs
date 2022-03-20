@@ -696,7 +696,12 @@ impl ITokenizer for Tokenizer {
     }
 
     fn html(&mut self, src: &str) -> Option<Token> {
-        let html_caps = self.rules.block.exec_fc(src, MDBlock::Html, None);
+        // let html_caps = self.rules.block.exec_fc(src, MDBlock::Html, None);
+
+        let html_re_str =  self.rules.block.html.as_str();
+        let html_re = regress::Regex::with_flags(html_re_str, "i").unwrap();
+
+        let html_caps = html_re.find(src);
 
         // let html_re =  self.rules.block.html.as_str();
         // let html_caps = onig::Regex::new(html_re)
@@ -728,9 +733,12 @@ impl ITokenizer for Tokenizer {
             // let raw = caps.at(0).map_or("", |m| m);
             // let cap_1 = caps.at(1).map_or("", |m| m);
 
-            let raw = caps.get(0).map_or("", |m| m.as_str());
-            let cap_1 = caps.get(0).map_or("", |m| m.as_str());
+            // let raw = caps.get(0).map_or("", |m| m.as_str());
+            // let cap_1 = caps.get(1).map_or("", |m| m.as_str());
 
+
+            let raw = caps.group(0).map_or("", |r| { &src[r] });
+            let cap_1 = caps.group(1).map_or("", |r| { &src[r] });
 
             let pre = !self.options.sanitizer.is_some() &&
                 cap_1 == "pre" ||

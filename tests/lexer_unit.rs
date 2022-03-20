@@ -6460,7 +6460,7 @@ paragraph
                 raw: "<a href=\"/bar\\/)\">\n".to_string(),
                 href: "".to_string(),
                 title: "".to_string(),
-                text: "<a href=\"/bar\\/)\">".to_string(),
+                text: "<a href=\"/bar\\/)\">\n".to_string(),
                 tokens: vec![],
                 tag: "".to_string(),
                 ordered: false,
