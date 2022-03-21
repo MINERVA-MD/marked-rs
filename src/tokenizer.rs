@@ -1,14 +1,12 @@
 use std::rc::Rc;
-use regex::Regex;
 use std::cmp::min;
-use std::{fmt, fs};
+use std::{fmt};
 use std::ops::Range;
-use std::fmt::Formatter;
+use std::cell::RefCell;
 use fancy_regex::Captures;
-use std::cell::{Ref, RefCell};
 
 use crate::defaults::Options;
-use crate::lexer::{ILexer, InlineToken, Lexer, regx};
+use crate::lexer::{InlineToken, Lexer, regx};
 use crate::rules::{get_rules, MDBlock, MDInline, Rules};
 use crate::helpers::{escape, find_closing_bracket, is_divisible, is_not_divisible, is_odd, rtrim, split_cells};
 
@@ -1198,8 +1196,8 @@ impl ITokenizer for Tokenizer {
                 pre: false,
                 task: false,
                 checked: false,
-                in_link: false,
-                in_raw_block: false,
+                in_link: token_in_link,
+                in_raw_block: token_in_raw_block,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -1431,7 +1429,6 @@ impl ITokenizer for Tokenizer {
         let match1 = caps.get(1).map_or("", |m| m.as_str());
         let match2 = caps.get(2).map_or("", |m| m.as_str());
         let match3 = caps.get(3).map_or("", |m| m.as_str());
-        let match4 = caps.get(4).map_or("", |m| m.as_str());
 
         if regx(r#"[\p{L}\p{N}]"#).is_match(prev_char) &&
             match3.len() > 0
@@ -1526,7 +1523,7 @@ impl ITokenizer for Tokenizer {
                     _match6.len() > 0
                 {
                     if is_not_divisible(l_length , 3) &&
-                        is_divisible((l_length + r_length), 3)
+                        is_divisible(l_length + r_length, 3)
                     {
                         mid_delim_total += r_length;
                         continue; // CommonMark Emphasis Rules 9-10

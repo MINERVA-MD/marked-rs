@@ -56,13 +56,13 @@ impl ITextRenderer for TextRenderer {
         String::from(text)
     }
 
-    fn link(&mut self, href: &str, title: &str, text: &str) -> String {
+    fn link(&mut self, _href: &str, _title: &str, text: &str) -> String {
         let mut ret = String::from("");
         ret.push_str(text);
         ret
     }
 
-    fn image(&mut self, href: &str, title: &str, text: &str) -> String {
+    fn image(&mut self, _href: &str, _title: &str, text: &str) -> String {
         let mut ret = String::from("");
         ret.push_str(text);
         ret

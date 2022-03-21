@@ -1,15 +1,11 @@
 use rand::Rng;
 use std::rc::Rc;
 use regex::Regex;
-use std::io::Write;
 use std::cell::RefCell;
-use std::borrow::{Borrow, BorrowMut};
 
-
-use crate::token::*;
 use crate::helpers::repeat_string;
-use crate::defaults::{get_default_options, Options};
-use crate::rules::{get_default_rules, get_rules, MDInline};
+use crate::defaults::{Options};
+use crate::rules::{MDInline};
 use crate::token;
 use crate::tokenizer::{ITokenizer, Link, slice, Token, Tokenizer};
 
@@ -285,19 +281,15 @@ impl ILexer for Lexer {
         let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
         new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
 
-        let mut _tokens = vec![];
-        let mut tokens: &mut Vec<Rc<RefCell<Token>>> = self.block_tokens(new_src.as_str(), &mut _tokens);
-
+        let mut tokens = vec![];
+        self.block_tokens(new_src.as_str(), &mut tokens);
 
         // println!("{:#?}", tokens);
 
         while self.inline_queue.len() > 0 {
             let next = self.inline_queue.remove(0);
             let i_tokens = &mut next.token.as_ref().borrow_mut().tokens;
-            let inline_tokens = self.inline_tokens(
-                next.src.as_str(),
-                i_tokens
-            );
+            self.inline_tokens(next.src.as_str(), i_tokens);
             // println!("Tokens for {} ==> {:#?}", next.src.as_str(), i_tokens);
         }
 
@@ -309,18 +301,15 @@ impl ILexer for Lexer {
         let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
         new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
 
-        let mut _tokens = vec![];
-        let mut tokens: &mut Vec<Rc<RefCell<Token>>> = self.block_tokens(new_src.as_str(), &mut _tokens);
+        let mut tokens = vec![];
+        self.block_tokens(new_src.as_str(), &mut tokens);
 
         // println!("{:#?}", tokens);
 
         while self.inline_queue.len() > 0 {
             let next = self.inline_queue.remove(0);
             let i_tokens = &mut next.token.as_ref().borrow_mut().tokens;
-            let inline_tokens = self.inline_tokens(
-                next.src.as_str(),
-                i_tokens
-            );
+            self.inline_tokens(next.src.as_str(), i_tokens);
             // println!("Tokens for {} ==> {:#?}", next.src.as_str(), i_tokens);
         }
 
@@ -354,7 +343,6 @@ impl ILexer for Lexer {
         }
 
         let mut cut_src: String;
-        let mut last_token: Token;
         let mut token: Option<Token>;
 
         let mut last_paragraph_clipped = false;
@@ -840,7 +828,6 @@ impl ILexer for Lexer {
         let mut prev_char: String = "".to_string();
         let mut _match: Vec<&str>;
         let mut token: Option<Token>;
-        let mut last_token: Token;
         let mut _keep_prev_char: bool = false;
 
         // Mask out reflinks
@@ -920,7 +907,6 @@ impl ILexer for Lexer {
             if captures_res.is_err() { break; }
 
             let caps = captures_res.unwrap();
-            let match0 = caps.get(0).map_or("", |m| m.as_str());
 
             let start = caps.get(0).unwrap().start();
             let end = caps.get(0).unwrap().end();
@@ -1210,11 +1196,19 @@ impl ILexer for Lexer {
     }
 
     fn check_extensions_block(&mut self, extensions_block: Option<&'static str>) -> bool {
-        return true;
+        return if extensions_block.is_some() {
+            true
+        } else {
+            true
+        }
     }
 
     fn check_extensions_inline(&mut self, extensions_inline: Option<&'static str>) -> bool {
-        return true;
+        return if extensions_inline.is_some() {
+            true
+        } else {
+            true
+        }
     }
 
 }

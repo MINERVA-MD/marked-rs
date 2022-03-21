@@ -1,14 +1,13 @@
-use std::{io, panic};
-use std::cell::RefCell;
 use std::rc::Rc;
-use std::string::ParseError;
+use std::cell::RefCell;
+
 
 use crate::slugger::Slugger;
 use crate::renderer::Renderer;
+use crate::tokenizer::{Token};
 use crate::lexer::{ILexer, Lexer};
 use crate::parser::{IParser, Parser};
 use crate::text_renderer::TextRenderer;
-use crate::tokenizer::{Token, Tokenizer};
 use crate::defaults::{Callback, get_default_options, Options};
 
 pub struct Marked {

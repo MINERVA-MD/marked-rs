@@ -1,6 +1,5 @@
 use std::rc::Rc;
 use std::cell::RefCell;
-use std::borrow::{Borrow, BorrowMut};
 
 use crate::tokenizer::Token;
 use crate::slugger::Slugger;
@@ -372,7 +371,6 @@ impl IParser for Parser {
     fn parse_inline(&mut self, tokens:  &mut Vec<Rc<RefCell<Token>>>, mut renderer: Renderer) -> String {
 
         let mut token: &mut Rc<RefCell<Token>>;
-        let mut ret: bool = false;
         let mut out = String::from("");
 
         let l = tokens.len();

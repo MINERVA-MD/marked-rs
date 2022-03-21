@@ -1,11 +1,11 @@
 // Helpers
+
 use std::borrow::{Cow};
 use std::collections::HashMap;
 use lazy_static::lazy_static;
-use serde::de::Unexpected::Str;
 use urlencoding::{encode, decode};
 use fancy_regex::{Captures, Regex};
-use url::Url;
+
 
 use crate::lexer::regx;
 use crate::tokenizer::slice;
@@ -349,7 +349,11 @@ pub fn repeat_string(pattern: &str, count: usize) -> String {
 }
 
 pub fn check_sanitize_deprecation(opt: &str) {
-    todo!()
+    if opt == "sanitize" {
+        return;
+    } else {
+        return;
+    }
 }
 
 pub fn is_even(num: i32) -> bool {

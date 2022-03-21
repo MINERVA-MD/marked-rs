@@ -178,7 +178,7 @@ impl Block {
         }
     }
 
-    pub fn get_grammar_regex(&self, rule: MDBlock, opt: Option<&str>) -> regex::Regex {
+    pub fn get_grammar_regex(&self, rule: MDBlock, _opt: Option<&str>) -> regex::Regex {
         match rule {
             MDBlock::Newline        => regex::Regex::new(self.newline.as_str()).unwrap(),
             MDBlock::Code           => regex::Regex::new(self.code.as_str()).unwrap(),
@@ -207,7 +207,7 @@ impl Block {
     }
 
 
-    pub fn get_grammar_fc_regex(&self, rule: MDBlock, opt: Option<RegexGlobalOpt>) -> fancy_regex::Regex {
+    pub fn get_grammar_fc_regex(&self, rule: MDBlock, _opt: Option<RegexGlobalOpt>) -> fancy_regex::Regex {
         match rule {
             MDBlock::Newline        => fancy_regex::Regex::new(self.newline.as_str()).unwrap(),
             MDBlock::Code           => fancy_regex::Regex::new(self.code.as_str()).unwrap(),
@@ -831,9 +831,7 @@ pub fn setup_inline_rules() -> Vec<Inline> {
         None
     );
 
-    /**
-     * GFM Inline Grammar
-     */
+    // GFM Inline Grammar
     let mut gfm_inline = normal_inline.clone();
 
 

@@ -1,6 +1,5 @@
-use std::cell::RefCell;
 use std::rc::Rc;
-use crate::rules::Rules;
+use std::cell::RefCell;
 use crate::tokenizer::Token;
 
 pub type Callback = fn(token: &mut Rc<RefCell<Token>>);
@@ -73,7 +72,7 @@ impl Options {
         }
     }
 
-    pub fn highlight(&mut self, code: &str, lang: &str) -> String {
+    pub fn highlight(&mut self, _code: &str, _lang: &str) -> String {
         "".to_string()
     }
 
