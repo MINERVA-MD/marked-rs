@@ -609,7 +609,8 @@ pub fn setup_block_rules() ->  Vec<Block> {
 pub fn setup_inline_rules() -> Vec<Inline> {
     /* Inline-Level Grammar */
     let mut normal_inline = Inline {
-        escape: r##"^\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])"##.to_string(),
+        // Escaped the following: (| => \|) and (~ => \~)
+        escape: r##"^\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{\|}\~])"##.to_string(),
         autolink: "^<(scheme:[^\\s\\x00-\\x1f<>]*|email)>".to_string(),
         url: "".to_string(),
         tag: "^comment|^<\\/[a-zA-Z][\\w:-]*\\s*>|^<[a-zA-Z][\\w-]*(?:attribute)*?\\s*\\/?>|^<\\?[\\s\\S]*?\\?>|^<![a-zA-Z]+\\s[\\s\\S]*?>|^<!\\[CDATA\\[[\\s\\S]*?\\]\\]>".to_string(),
@@ -631,7 +632,8 @@ pub fn setup_inline_rules() -> Vec<Inline> {
         block_skip: "\\[[^\\]]*?\\]\\([^\\)]*?\\)|`[^`]*?`|<[^>]*?>".to_string(),
         escaped_em_st: "\\\\\\*|\\\\_".to_string(),
         comment: "<!--(?!-?>)[\\s\\S]*?(?:-->|$)".to_string(),
-        escapes: r##"\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])"##.to_string(),
+        // Escaped the following: (| => \|) and (~ => \~)
+        escapes: r##"\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{\|}\~])"##.to_string(),
         scheme: "[a-zA-Z][a-zA-Z0-9+.-]{1,31}".to_string(),
         email: "[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+(@)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+(?![-_])".to_string(),
         attribute: r#"\s+[a-zA-Z:_][\w.:-]*(?:\s*=\s*"[^"]*"|\s*=\s*'[^']*'|\s*=\s*[^\s"'=<>`]+)?"#.to_string(),
@@ -923,7 +925,7 @@ pub fn get_default_rules() -> Rules {
             table: block.table.to_string(),
             l_heading: block.l_heading.to_string(),
             paragraph: block.paragraph.to_string(),
-            text: block.paragraph.to_string(),
+            text: block.text.to_string(),
             label: block.label.to_string(),
             title: block.title.to_string(),
             bullet: block.bullet.to_string(),
@@ -1016,7 +1018,7 @@ pub fn get_rules(options: Options) -> Rules {
             table: block.table.to_string(),
             l_heading: block.l_heading.to_string(),
             paragraph: block.paragraph.to_string(),
-            text: block.paragraph.to_string(),
+            text: block.text.to_string(),
             label: block.label.to_string(),
             title: block.title.to_string(),
             bullet: block.bullet.to_string(),

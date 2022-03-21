@@ -121,6 +121,7 @@ impl IRenderer for Renderer {
     fn list(&mut self, body: &str, ordered: bool, start: i32) -> String {
         let _type = if ordered {"ol"} else {"ul"};
         let start_at = if ordered && start != 1 { format!(r#" start="{}""#, start) } else {"".to_string()};
+
         format!("<{}{}>\n{}</{}>\n",
                 _type,
                 start_at,
@@ -198,12 +199,13 @@ impl IRenderer for Renderer {
     }
 
     fn link(&mut self, href: &str, title: &str, text: &str) -> String {
-        let _href = clean_url(self.options.sanitize, self.options.base_url, href);
+        let __href = clean_url(self.options.sanitize, self.options.base_url, href);
 
-        if _href == "" {
+        if __href.is_none()  {
             return String::from(text);
         }
 
+        let _href = __href.unwrap();
         let mut out = format!(r#"<a href="{}""#, escape(_href.as_str(), false));
 
         if title != "" {
@@ -215,12 +217,13 @@ impl IRenderer for Renderer {
     }
 
     fn image(&mut self, href: &str, title: &str, text: &str) -> String {
-        let _href = clean_url(self.options.sanitize, self.options.base_url, href);
+        let __href = clean_url(self.options.sanitize, self.options.base_url, href);
 
-        if _href == "" {
+        if __href.is_none()  {
             return String::from(text);
         }
 
+        let _href = __href.unwrap();
         let mut out = format!(r#"<img src="{}" alt="{}""#, _href, text);
 
         if title != "" {

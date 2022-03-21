@@ -1,4 +1,5 @@
 use std::fs;
+use ntest::timeout;
 use test_case::test_case;
 
 use marked_rs::token::Token;
@@ -6,7 +7,6 @@ use marked_rs::tokenizer::{Link};
 use marked_rs::defaults::Options;
 use marked_rs::lexer::{ILexer, Lexer};
 use pretty_assertions::{assert_eq, assert_ne};
-
 
 pub fn expect_tokens(md: &str, options: Options, mut tokens: &mut Vec<Token>, links: Vec<Link>) {
     let mut lexer = Lexer::new(options);
@@ -6360,6 +6360,882 @@ paragraph
     }
 
     #[test]
+    #[timeout(8000)]
+    fn check_cm_spec_example_12() {
+        let md = "\\!\\\"\\#\\$\\%\\&\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~\n";
+        let mut tokens = vec![
+            Token {
+                _type: "paragraph",
+                raw: "\\!\\\"\\#\\$\\%\\&\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~\n".to_string(),
+                href: "".to_string(),
+                title: "".to_string(),
+                text: "\\!\\\"\\#\\$\\%\\&\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~".to_string(),
+                tokens: vec![
+                    Token {
+                        _type: "escape",
+                        raw: "\\!".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "!".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\\"".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "&quot;".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\#".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "#".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\$".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "$".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\%".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "%".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\&".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "&amp;".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\'".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "&#39;".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\(".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "(".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\)".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: ")".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\*".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "*".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\+".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "+".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\,".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: ",".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\-".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "-".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\.".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: ".".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\/".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "/".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\:".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: ":".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\;".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: ";".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\<".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "&lt;".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\=".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "=".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\>".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "&gt;".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\?".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "?".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\@".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "@".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\[".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "[".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\\\".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "\\".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\]".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "]".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\^".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "^".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\_".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "_".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\`".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "`".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\{".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "{".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\|".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "|".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\}".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "}".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "escape",
+                        raw: "\\~".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "~".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                ],
+                tag: "".to_string(),
+                ordered: false,
+                start: 0,
+                lang: "".to_string(),
+                loose: false,
+                items: vec![],
+                depth: 0,
+                escaped: false,
+                pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
+                links: vec![],
+                align: vec![],
+                rows: vec![],
+                header: vec![],
+                code_block_style: "".to_string()
+            }
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[test]
+    #[timeout(8000)]
     fn check_cm_spec_example_18() {
         let md = "<http://example.com?find=\\*>\n";
         let mut tokens = vec![
@@ -6447,11 +7323,15 @@ paragraph
 
         let links = vec![];
         let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
 
         expect_tokens(md, options, &mut tokens, links);
     }
 
     #[test]
+    #[timeout(8000)]
     fn check_cm_spec_example_21() {
         let md = "<a href=\"/bar\\/)\">\n";
         let mut tokens = vec![
@@ -6485,11 +7365,15 @@ paragraph
 
         let links = vec![];
         let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
 
         expect_tokens(md, options, &mut tokens, links);
     }
 
     #[test]
+    #[timeout(8000)]
     fn check_cm_spec_example_22() {
         let md = "[foo](/bar\\* \"ti\\*tle\")\n";
         let mut tokens = vec![
@@ -6577,11 +7461,15 @@ paragraph
 
         let links = vec![];
         let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
 
         expect_tokens(md, options, &mut tokens, links);
     }
 
     #[test]
+    #[timeout(8000)]
     fn check_cm_spec_example_23() {
         let md = "[foo]\n\n[foo]: /bar\\* \"ti\\*tle\"\n";
         let mut tokens = vec![
@@ -6695,11 +7583,15 @@ paragraph
 
         let links = vec![];
         let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
 
         expect_tokens(md, options, &mut tokens, links);
     }
 
     #[test]
+    #[timeout(8000)]
     fn check_cm_spec_example_56() {
         let md = " *-*\n";
         let mut tokens = vec![
@@ -6813,11 +7705,16 @@ paragraph
 
         let links = vec![];
         let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
 
         expect_tokens(md, options, &mut tokens, links);
     }
 
+
     #[test]
+    #[timeout(8000)]
     fn check_cm_spec_example_152() {
         let md = "<DIV CLASS=\"foo\">\n\n*Markdown*\n\n</DIV>\n";
         let mut tokens = vec![
@@ -6983,11 +7880,15 @@ paragraph
 
         let links = vec![];
         let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
 
         expect_tokens(md, options, &mut tokens, links);
     }
 
     #[test]
+    #[timeout(8000)]
     fn check_cm_spec_example_216() {
         let md = "[foo]: /url\n===\n[foo]\n";
         let mut tokens = vec![
@@ -7101,11 +8002,15 @@ paragraph
 
         let links = vec![];
         let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
 
         expect_tokens(md, options, &mut tokens, links);
     }
     
     #[test]
+    #[timeout(8000)]
     fn check_cm_spec_example_286() {
         let md = " 1.  A paragraph\n     with two lines.\n\n         indented code\n\n     > A block quote.\n";
         let mut tokens = vec![
@@ -7352,11 +8257,676 @@ paragraph
 
         let links = vec![];
         let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+    
+    #[test]
+    #[timeout(8000)]
+    fn check_cm_spec_example_312() {
+        let md = "- a\n - b\n  - c\n   - d\n    - e\n";
+        let mut tokens = vec![
+            Token {
+                _type: "list",
+                raw: "- a\n - b\n  - c\n   - d\n    - e\n".to_string(),
+                href: "".to_string(),
+                title: "".to_string(),
+                text: "".to_string(),
+                tokens: vec![],
+                tag: "".to_string(),
+                ordered: false,
+                start: 0,
+                lang: "".to_string(),
+                loose: false,
+                items: vec![
+                    Token {
+                        _type: "list_item",
+                        raw: "- a\n".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "a".to_string(),
+                        tokens: vec![
+                            Token {
+                                _type: "text",
+                                raw: "a".to_string(),
+                                href: "".to_string(),
+                                title: "".to_string(),
+                                text: "a".to_string(),
+                                tokens: vec![
+                                    Token {
+                                        _type: "text",
+                                        raw: "a".to_string(),
+                                        href: "".to_string(),
+                                        title: "".to_string(),
+                                        text: "a".to_string(),
+                                        tokens: vec![],
+                                        tag: "".to_string(),
+                                        ordered: false,
+                                        start: 0,
+                                        lang: "".to_string(),
+                                        loose: false,
+                                        items: vec![],
+                                        depth: 0,
+                                        escaped: false,
+                                        pre: false,
+                                        task: false,
+                                        checked: false,
+                                        in_link: false,
+                                        in_raw_block: false,
+                                        links: vec![],
+                                        align: vec![],
+                                        rows: vec![],
+                                        header: vec![],
+                                        code_block_style: "".to_string()
+                                    }
+                                ],
+                                tag: "".to_string(),
+                                ordered: false,
+                                start: 0,
+                                lang: "".to_string(),
+                                loose: false,
+                                items: vec![],
+                                depth: 0,
+                                escaped: false,
+                                pre: false,
+                                task: false,
+                                checked: false,
+                                in_link: false,
+                                in_raw_block: false,
+                                links: vec![],
+                                align: vec![],
+                                rows: vec![],
+                                header: vec![],
+                                code_block_style: "".to_string()
+                            }
+                        ],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "list_item",
+                        raw: " - b\n".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "b".to_string(),
+                        tokens: vec![
+                            Token {
+                                _type: "text",
+                                raw: "b".to_string(),
+                                href: "".to_string(),
+                                title: "".to_string(),
+                                text: "b".to_string(),
+                                tokens: vec![
+                                    Token {
+                                        _type: "text",
+                                        raw: "b".to_string(),
+                                        href: "".to_string(),
+                                        title: "".to_string(),
+                                        text: "b".to_string(),
+                                        tokens: vec![],
+                                        tag: "".to_string(),
+                                        ordered: false,
+                                        start: 0,
+                                        lang: "".to_string(),
+                                        loose: false,
+                                        items: vec![],
+                                        depth: 0,
+                                        escaped: false,
+                                        pre: false,
+                                        task: false,
+                                        checked: false,
+                                        in_link: false,
+                                        in_raw_block: false,
+                                        links: vec![],
+                                        align: vec![],
+                                        rows: vec![],
+                                        header: vec![],
+                                        code_block_style: "".to_string()
+                                    }
+                                ],
+                                tag: "".to_string(),
+                                ordered: false,
+                                start: 0,
+                                lang: "".to_string(),
+                                loose: false,
+                                items: vec![],
+                                depth: 0,
+                                escaped: false,
+                                pre: false,
+                                task: false,
+                                checked: false,
+                                in_link: false,
+                                in_raw_block: false,
+                                links: vec![],
+                                align: vec![],
+                                rows: vec![],
+                                header: vec![],
+                                code_block_style: "".to_string()
+                            }
+                        ],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "list_item",
+                        raw: "  - c\n".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "c".to_string(),
+                        tokens: vec![
+                            Token {
+                                _type: "text",
+                                raw: "c".to_string(),
+                                href: "".to_string(),
+                                title: "".to_string(),
+                                text: "c".to_string(),
+                                tokens: vec![
+                                    Token {
+                                        _type: "text",
+                                        raw: "c".to_string(),
+                                        href: "".to_string(),
+                                        title: "".to_string(),
+                                        text: "c".to_string(),
+                                        tokens: vec![],
+                                        tag: "".to_string(),
+                                        ordered: false,
+                                        start: 0,
+                                        lang: "".to_string(),
+                                        loose: false,
+                                        items: vec![],
+                                        depth: 0,
+                                        escaped: false,
+                                        pre: false,
+                                        task: false,
+                                        checked: false,
+                                        in_link: false,
+                                        in_raw_block: false,
+                                        links: vec![],
+                                        align: vec![],
+                                        rows: vec![],
+                                        header: vec![],
+                                        code_block_style: "".to_string()
+                                    }
+                                ],
+                                tag: "".to_string(),
+                                ordered: false,
+                                start: 0,
+                                lang: "".to_string(),
+                                loose: false,
+                                items: vec![],
+                                depth: 0,
+                                escaped: false,
+                                pre: false,
+                                task: false,
+                                checked: false,
+                                in_link: false,
+                                in_raw_block: false,
+                                links: vec![],
+                                align: vec![],
+                                rows: vec![],
+                                header: vec![],
+                                code_block_style: "".to_string()
+                            }
+                        ],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "list_item",
+                        raw: "   - d\n    - e".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "d\n    - e".to_string(),
+                        tokens: vec![
+                            Token {
+                                _type: "text",
+                                raw: "d\n\n    - e".to_string(),
+                                href: "".to_string(),
+                                title: "".to_string(),
+                                text: "d\n- e".to_string(),
+                                tokens: vec![
+                                    Token {
+                                        _type: "text",
+                                        raw: "d\n- e".to_string(),
+                                        href: "".to_string(),
+                                        title: "".to_string(),
+                                        text: "d\n- e".to_string(),
+                                        tokens: vec![],
+                                        tag: "".to_string(),
+                                        ordered: false,
+                                        start: 0,
+                                        lang: "".to_string(),
+                                        loose: false,
+                                        items: vec![],
+                                        depth: 0,
+                                        escaped: false,
+                                        pre: false,
+                                        task: false,
+                                        checked: false,
+                                        in_link: false,
+                                        in_raw_block: false,
+                                        links: vec![],
+                                        align: vec![],
+                                        rows: vec![],
+                                        header: vec![],
+                                        code_block_style: "".to_string()
+                                    }
+                                ],
+                                tag: "".to_string(),
+                                ordered: false,
+                                start: 0,
+                                lang: "".to_string(),
+                                loose: false,
+                                items: vec![],
+                                depth: 0,
+                                escaped: false,
+                                pre: false,
+                                task: false,
+                                checked: false,
+                                in_link: false,
+                                in_raw_block: false,
+                                links: vec![],
+                                align: vec![],
+                                rows: vec![],
+                                header: vec![],
+                                code_block_style: "".to_string()
+                            }
+                        ],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    }
+                ],
+                depth: 0,
+                escaped: false,
+                pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
+                links: vec![],
+                align: vec![],
+                rows: vec![],
+                header: vec![],
+                code_block_style: "".to_string()
+            }
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
 
         expect_tokens(md, options, &mut tokens, links);
     }
 
     #[test]
+    #[timeout(8000)]
+    fn check_cm_spec_example_315() {
+        let md = "* a\n*\n\n* c\n";
+        let mut tokens = vec![
+            Token {
+                _type: "list",
+                raw: "* a\n*\n\n* c\n".to_string(),
+                href: "".to_string(),
+                title: "".to_string(),
+                text: "".to_string(),
+                tokens: vec![],
+                tag: "".to_string(),
+                ordered: false,
+                start: 0,
+                lang: "".to_string(),
+                loose: true,
+                items: vec![
+                    Token {
+                        _type: "list_item",
+                        raw: "* a\n".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "a".to_string(),
+                        tokens: vec![
+                            Token {
+                                _type: "text",
+                                raw: "a".to_string(),
+                                href: "".to_string(),
+                                title: "".to_string(),
+                                text: "a".to_string(),
+                                tokens: vec![
+                                    Token {
+                                        _type: "text",
+                                        raw: "a".to_string(),
+                                        href: "".to_string(),
+                                        title: "".to_string(),
+                                        text: "a".to_string(),
+                                        tokens: vec![],
+                                        tag: "".to_string(),
+                                        ordered: false,
+                                        start: 0,
+                                        lang: "".to_string(),
+                                        loose: false,
+                                        items: vec![],
+                                        depth: 0,
+                                        escaped: false,
+                                        pre: false,
+                                        task: false,
+                                        checked: false,
+                                        in_link: false,
+                                        in_raw_block: false,
+                                        links: vec![],
+                                        align: vec![],
+                                        rows: vec![],
+                                        header: vec![],
+                                        code_block_style: "".to_string()
+                                    }
+                                ],
+                                tag: "".to_string(),
+                                ordered: false,
+                                start: 0,
+                                lang: "".to_string(),
+                                loose: false,
+                                items: vec![],
+                                depth: 0,
+                                escaped: false,
+                                pre: false,
+                                task: false,
+                                checked: false,
+                                in_link: false,
+                                in_raw_block: false,
+                                links: vec![],
+                                align: vec![],
+                                rows: vec![],
+                                header: vec![],
+                                code_block_style: "".to_string()
+                            }
+                        ],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "list_item",
+                        raw: "*\n\n".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                    Token {
+                        _type: "list_item",
+                        raw: "* c".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "c".to_string(),
+                        tokens: vec![
+                            Token {
+                                _type: "text",
+                                raw: "c".to_string(),
+                                href: "".to_string(),
+                                title: "".to_string(),
+                                text: "c".to_string(),
+                                tokens: vec![
+                                    Token {
+                                        _type: "text",
+                                        raw: "c".to_string(),
+                                        href: "".to_string(),
+                                        title: "".to_string(),
+                                        text: "c".to_string(),
+                                        tokens: vec![],
+                                        tag: "".to_string(),
+                                        ordered: false,
+                                        start: 0,
+                                        lang: "".to_string(),
+                                        loose: false,
+                                        items: vec![],
+                                        depth: 0,
+                                        escaped: false,
+                                        pre: false,
+                                        task: false,
+                                        checked: false,
+                                        in_link: false,
+                                        in_raw_block: false,
+                                        links: vec![],
+                                        align: vec![],
+                                        rows: vec![],
+                                        header: vec![],
+                                        code_block_style: "".to_string()
+                                    }
+                                ],
+                                tag: "".to_string(),
+                                ordered: false,
+                                start: 0,
+                                lang: "".to_string(),
+                                loose: false,
+                                items: vec![],
+                                depth: 0,
+                                escaped: false,
+                                pre: false,
+                                task: false,
+                                checked: false,
+                                in_link: false,
+                                in_raw_block: false,
+                                links: vec![],
+                                align: vec![],
+                                rows: vec![],
+                                header: vec![],
+                                code_block_style: "".to_string()
+                            }
+                        ],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    },
+                ],
+                depth: 0,
+                escaped: false,
+                pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
+                links: vec![],
+                align: vec![],
+                rows: vec![],
+                header: vec![],
+                code_block_style: "".to_string()
+            }
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[test]
+    #[timeout(8000)]
+    fn check_cm_spec_example_361() {
+        let md = "пристаням_стремятся_\n";
+        let mut tokens = vec![
+            Token {
+                _type: "paragraph",
+                raw: "пристаням_стремятся_\n".to_string(),
+                href: "".to_string(),
+                title: "".to_string(),
+                text: "пристаням_стремятся_".to_string(),
+                tokens: vec![
+                    Token {
+                        _type: "text",
+                        raw: "пристаням_стремятся_".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "пристаням_стремятся_".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    }
+                ],
+                tag: "".to_string(),
+                ordered: false,
+                start: 0,
+                lang: "".to_string(),
+                loose: false,
+                items: vec![],
+                depth: 0,
+                escaped: false,
+                pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
+                links: vec![],
+                align: vec![],
+                rows: vec![],
+                header: vec![],
+                code_block_style: "".to_string()
+            }
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[test]
+    #[timeout(8000)]
     fn check_cm_spec_example_398() {
         let md = "_(__foo__)_\n";
         let mut tokens = vec![
@@ -7523,6 +9093,435 @@ paragraph
 
         let links = vec![];
         let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[test]
+    #[timeout(8000)]
+    fn check_cm_spec_example_484() {
+        let md = "[link]()\n";
+        let mut tokens = vec![
+            Token {
+                _type: "paragraph",
+                raw: "[link]()\n".to_string(),
+                href: "".to_string(),
+                title: "".to_string(),
+                text: "[link]()".to_string(),
+                tokens: vec![
+                    Token {
+                        _type: "link",
+                        raw: "[link]()".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "link".to_string(),
+                        tokens: vec![
+                            Token {
+                                _type: "text",
+                                raw: "link".to_string(),
+                                href: "".to_string(),
+                                title: "".to_string(),
+                                text: "link".to_string(),
+                                tokens: vec![],
+                                tag: "".to_string(),
+                                ordered: false,
+                                start: 0,
+                                lang: "".to_string(),
+                                loose: false,
+                                items: vec![],
+                                depth: 0,
+                                escaped: false,
+                                pre: false,
+                                task: false,
+                                checked: false,
+                                in_link: false,
+                                in_raw_block: false,
+                                links: vec![],
+                                align: vec![],
+                                rows: vec![],
+                                header: vec![],
+                                code_block_style: "".to_string()
+                            }
+                        ],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    }
+                ],
+                tag: "".to_string(),
+                ordered: false,
+                start: 0,
+                lang: "".to_string(),
+                loose: false,
+                items: vec![],
+                depth: 0,
+                escaped: false,
+                pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
+                links: vec![],
+                align: vec![],
+                rows: vec![],
+                header: vec![],
+                code_block_style: "".to_string()
+            }
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[test]
+    #[timeout(3000)]
+    fn check_cm_spec_example_494() {
+        let md = "[link](\\(foo\\))\n";
+        let mut tokens = vec![
+            Token {
+                _type: "paragraph",
+                raw: "[link](\\(foo\\))\n".to_string(),
+                href: "".to_string(),
+                title: "".to_string(),
+                text: "[link](\\(foo\\))".to_string(),
+                tokens: vec![
+                    Token {
+                        _type: "link",
+                        raw: "[link](\\(foo\\))".to_string(),
+                        href: "(foo)".to_string(),
+                        title: "".to_string(),
+                        text: "link".to_string(),
+                        tokens: vec![
+                            Token {
+                                _type: "text",
+                                raw: "link".to_string(),
+                                href: "".to_string(),
+                                title: "".to_string(),
+                                text: "link".to_string(),
+                                tokens: vec![],
+                                tag: "".to_string(),
+                                ordered: false,
+                                start: 0,
+                                lang: "".to_string(),
+                                loose: false,
+                                items: vec![],
+                                depth: 0,
+                                escaped: false,
+                                pre: false,
+                                task: false,
+                                checked: false,
+                                in_link: false,
+                                in_raw_block: false,
+                                links: vec![],
+                                align: vec![],
+                                rows: vec![],
+                                header: vec![],
+                                code_block_style: "".to_string()
+                            }
+                        ],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    }
+                ],
+                tag: "".to_string(),
+                ordered: false,
+                start: 0,
+                lang: "".to_string(),
+                loose: false,
+                items: vec![],
+                depth: 0,
+                escaped: false,
+                pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
+                links: vec![],
+                align: vec![],
+                rows: vec![],
+                header: vec![],
+                code_block_style: "".to_string()
+            }
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[test]
+    #[timeout(3000)]
+    fn check_cm_spec_example_517() {
+        let md = "[link](\\(foo\\))\n";
+        let mut tokens = vec![
+            Token {
+                _type: "paragraph",
+                raw: "[link](\\(foo\\))\n".to_string(),
+                href: "".to_string(),
+                title: "".to_string(),
+                text: "[link](\\(foo\\))".to_string(),
+                tokens: vec![
+                    Token {
+                        _type: "link",
+                        raw: "[link](\\(foo\\))".to_string(),
+                        href: "(foo)".to_string(),
+                        title: "".to_string(),
+                        text: "link".to_string(),
+                        tokens: vec![
+                            Token {
+                                _type: "text",
+                                raw: "link".to_string(),
+                                href: "".to_string(),
+                                title: "".to_string(),
+                                text: "link".to_string(),
+                                tokens: vec![],
+                                tag: "".to_string(),
+                                ordered: false,
+                                start: 0,
+                                lang: "".to_string(),
+                                loose: false,
+                                items: vec![],
+                                depth: 0,
+                                escaped: false,
+                                pre: false,
+                                task: false,
+                                checked: false,
+                                in_link: false,
+                                in_raw_block: false,
+                                links: vec![],
+                                align: vec![],
+                                rows: vec![],
+                                header: vec![],
+                                code_block_style: "".to_string()
+                            }
+                        ],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    }
+                ],
+                tag: "".to_string(),
+                ordered: false,
+                start: 0,
+                lang: "".to_string(),
+                loose: false,
+                items: vec![],
+                depth: 0,
+                escaped: false,
+                pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
+                links: vec![],
+                align: vec![],
+                rows: vec![],
+                header: vec![],
+                code_block_style: "".to_string()
+            }
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[test]
+    #[timeout(8000)]
+    fn check_cm_spec_example_601() {
+        let md = "<http://foo.bar/baz bim>\n";
+        let mut tokens = vec![
+            Token {
+                _type: "paragraph",
+                raw: "<http://foo.bar/baz bim>\n".to_string(),
+                href: "".to_string(),
+                title: "".to_string(),
+                text: "<http://foo.bar/baz bim>".to_string(),
+                tokens: vec![
+                    Token {
+                        _type: "text",
+                        raw: "<http://foo.bar/baz bim>".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "&lt;http://foo.bar/baz bim&gt;".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    }
+                ],
+                tag: "".to_string(),
+                ordered: false,
+                start: 0,
+                lang: "".to_string(),
+                loose: false,
+                items: vec![],
+                depth: 0,
+                escaped: false,
+                pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
+                links: vec![],
+                align: vec![],
+                rows: vec![],
+                header: vec![],
+                code_block_style: "".to_string()
+            }
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[ignore]
+    #[timeout(8000)]
+    fn check_cm_spec_example_604() {
+        let md = "<foo+special@Bar.baz-bar0.com>\n";
+        let mut tokens = vec![
+            Token {
+                _type: "paragraph",
+                raw: "<http://foo.bar/baz bim>\n".to_string(),
+                href: "".to_string(),
+                title: "".to_string(),
+                text: "<http://foo.bar/baz bim>".to_string(),
+                tokens: vec![
+                    Token {
+                        _type: "text",
+                        raw: "<http://foo.bar/baz bim>".to_string(),
+                        href: "".to_string(),
+                        title: "".to_string(),
+                        text: "&lt;http://foo.bar/baz bim&gt;".to_string(),
+                        tokens: vec![],
+                        tag: "".to_string(),
+                        ordered: false,
+                        start: 0,
+                        lang: "".to_string(),
+                        loose: false,
+                        items: vec![],
+                        depth: 0,
+                        escaped: false,
+                        pre: false,
+                        task: false,
+                        checked: false,
+                        in_link: false,
+                        in_raw_block: false,
+                        links: vec![],
+                        align: vec![],
+                        rows: vec![],
+                        header: vec![],
+                        code_block_style: "".to_string()
+                    }
+                ],
+                tag: "".to_string(),
+                ordered: false,
+                start: 0,
+                lang: "".to_string(),
+                loose: false,
+                items: vec![],
+                depth: 0,
+                escaped: false,
+                pre: false,
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block: false,
+                links: vec![],
+                align: vec![],
+                rows: vec![],
+                header: vec![],
+                code_block_style: "".to_string()
+            }
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+        options.gfm = false;
+        options.pedantic = false;
+        options.header_ids = false;
 
         expect_tokens(md, options, &mut tokens, links);
     }

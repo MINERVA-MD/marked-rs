@@ -107,7 +107,7 @@ pub fn unescape(html: &str) -> String {
     }).to_string();
 }
 
-pub fn clean_url(sanitize: bool, base: &str, href: &str) -> String {
+pub fn clean_url(sanitize: bool, base: &str, href: &str) -> Option<String> {
 
     let mut _href = String::from(href);
     let non_word_and_colon_re = regx(r#"[^\w:]"#);
@@ -127,7 +127,7 @@ pub fn clean_url(sanitize: bool, base: &str, href: &str) -> String {
                     .to_lowercase();
             },
             Err(error) => {
-                prot = "".to_string();
+                return None;
             },
         };
 
@@ -141,7 +141,7 @@ pub fn clean_url(sanitize: bool, base: &str, href: &str) -> String {
                 prot.find("data:").is_some() &&
                     prot.find("data:").unwrap() == 0)
         {
-            return "".to_string();
+            return None;
         }
     }
 
@@ -153,15 +153,12 @@ pub fn clean_url(sanitize: bool, base: &str, href: &str) -> String {
 
     let encoded_uri = encode_uri(_href.as_str());
 
-    // println!("Href: {:?}", href);
-    // println!("Url Parsed: {:?}", Url::parse(href));
-
     // TODO: Note that encodeURI throws error when trying to encode surrogate
     _href = regx("%25")
         .replace_all(encoded_uri.as_str(), "%")
         .to_string();
 
-    _href
+    Some(_href)
 }
 
 pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
@@ -177,11 +174,11 @@ pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
         cells.remove(0);
     }
 
-    let idx = cells.len() - 1;
+    let idx = (cells.len() as i32) - 1;
     if cells.len() > 0 &&
-        cells.get_mut(idx).unwrap().trim().is_empty()
+        cells.get_mut(idx as usize).unwrap().trim().is_empty()
     {
-        cells.remove(idx);
+        cells.remove(idx as usize);
     }
 
     if count.is_some() {
@@ -232,10 +229,6 @@ pub fn get_row(a: &str) -> String {
                 " |"
             }
         });
-
-    // println!("{}", row.len());
-    // println!("{}", row);
-
     String::from(row)
 }
 
@@ -321,12 +314,14 @@ pub fn rtrim(_str: &str, c: &str, invert: bool) -> String {
 }
 
 pub fn find_closing_bracket(_str: &str, b: &str) -> i32 {
-    if _str.find(b.chars().nth(0).unwrap()).is_none() {
+    if b.len() < 2 { return -1; }
+
+    if _str.find(b.chars().nth(1).unwrap()).is_none() {
         return -1;
     }
 
     let l = _str.len();
-    let mut level: usize = 0;
+    let mut level: i32 = 0;
     let mut i: usize = 0;
 
     while i < l {
@@ -344,6 +339,7 @@ pub fn find_closing_bracket(_str: &str, b: &str) -> i32 {
                 return i as i32;
             }
         }
+        i += 1;
     }
     return -1
 }
@@ -354,6 +350,22 @@ pub fn repeat_string(pattern: &str, count: usize) -> String {
 
 pub fn check_sanitize_deprecation(opt: &str) {
     todo!()
+}
+
+pub fn is_even(num: i32) -> bool {
+    num % 2 == 0
+}
+
+pub fn is_odd(num: i32) -> bool {
+    !is_even(num)
+}
+
+pub fn is_divisible(num: i32, divisor: i32) -> bool {
+    num % divisor == 0
+}
+
+pub fn is_not_divisible(num: i32, divisor: i32) -> bool {
+    !is_divisible(num, divisor)
 }
 
 pub fn encode_uri(uri: &str) -> String {
@@ -375,32 +387,5 @@ pub fn encode_uri(uri: &str) -> String {
         .replace("%28", "(")
         .replace("%29", ")")
         .replace("%23", "#")
-
-    // let url = Url::parse(uri);
-    //
-    // if url.is_ok() {
-    //     return "".to_string();
-    // } else {
-    //     let mut encoded_uri = encode(uri).to_string();
-    //     encoded_uri = encoded_uri
-    //         .replace("%3B", ";")
-    //         .replace("%2C", ",")
-    //         .replace("%2F", "/")
-    //         .replace("%3F", "?")
-    //         .replace("%3A", ":")
-    //         .replace("%40", "@")
-    //         .replace("%26", "&")
-    //         .replace("%3D", "=")
-    //         .replace("%2B", "+")
-    //         .replace("%24", "$")
-    //         .replace("%21", "!")
-    //         .replace("%2A", "*")
-    //         .replace("%27", "'")
-    //         .replace("%28", "(")
-    //         .replace("%29", ")")
-    //         .replace("%23", "#");
-    //
-    //     return encoded_uri;
-    // }
 }
 
