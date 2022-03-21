@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::tokenizer::Token;

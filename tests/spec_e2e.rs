@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 macro_rules! spec_test {
     ($path:expr, $from:expr, $to:expr) => {
 

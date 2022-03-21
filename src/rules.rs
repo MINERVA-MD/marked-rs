@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 use regex::Regex;
 use fancy_regex::*;
 use lazy_static::lazy_static;

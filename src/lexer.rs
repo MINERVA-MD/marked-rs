@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 use rand::Rng;
 use std::rc::Rc;
 use regex::Regex;

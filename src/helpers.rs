@@ -1,5 +1,5 @@
 // Helpers
-
+#![allow(warnings, unused)]
 use std::borrow::{Cow};
 use std::collections::HashMap;
 use lazy_static::lazy_static;

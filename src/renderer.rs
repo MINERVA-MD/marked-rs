@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 use crate::lexer::regx;
 use crate::slugger::Slugger;
 use crate::defaults::Options;

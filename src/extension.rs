@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 use crate::tokenizer::Token;
 
 pub type StartFn = fn(src: &str) -> i32;

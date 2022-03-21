@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 use std::fs;
 use test_case::test_case;
 use marked_rs::defaults::Options;

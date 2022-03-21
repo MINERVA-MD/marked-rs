@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 use std::fs;
 use ntest::timeout;
 use test_case::test_case;

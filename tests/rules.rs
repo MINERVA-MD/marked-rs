@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 use marked_rs::rules::test;
 
 use std::fs;
