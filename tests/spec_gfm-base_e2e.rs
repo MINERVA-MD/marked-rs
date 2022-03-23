@@ -85,7 +85,7 @@ macro_rules! spec_test {
 }
 
 
-// 651
+// 652
 spec_test!("tests/fixtures/marked-specs/gfm/commonmark.0.30.json", 0, 651);
 
 
