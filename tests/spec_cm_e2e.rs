@@ -66,12 +66,13 @@ macro_rules! spec_test {
                     if !(*spec_should_fail) {
                         //println!("Expected: {} | \nAcutal  : {}", *expected_marked_html, actual_html);
                         if *expected_marked_html != actual_html {
+
                             if *&spec.example == 603 ||
-                            *&spec.example == 604
-                            {
-                                pretty_assertions::assert_eq!(true, true);
-                                return;
-                            }
+                                *&spec.example == 604
+                                {
+                                    pretty_assertions::assert_eq!(true, true);
+                                    return;
+                                }
                             println!("Failing Spec : {}", &spec.example)
                         }
                         pretty_assertions::assert_eq!(*expected_marked_html, actual_html)
@@ -84,7 +85,6 @@ macro_rules! spec_test {
 
 
 // 651
-
 spec_test!("tests/fixtures/marked-specs/commonmark/commonmark.0.30.json", 0, 651);
 
 

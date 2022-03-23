@@ -164,6 +164,7 @@ pub fn clean_url(sanitize: bool, base: &str, href: &str) -> Option<String> {
 pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
 
     let row = get_row(table_row);
+
     let mut cells: Vec<String> = regx(r#" \|"#).split(row.as_str())
         .map(|x| x.to_string())
         .collect();
@@ -183,7 +184,7 @@ pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
 
     if count.is_some() {
         if cells.len() > count.unwrap() {
-            cells.drain(0..count.unwrap());
+            cells.drain(count.unwrap()..);
         } else {
             while cells.len() < count.unwrap() {
                 cells.push("".to_string());
@@ -205,19 +206,17 @@ pub fn get_row(a: &str) -> String {
         .replace_all(a, |cap: &regex::Captures| {
             let mut escaped = false;
             let mut curr: i32 = cap.get(0).unwrap().start() as i32;
+            let str = a.clone();
 
             loop {
                 curr -= 1;
-                let str = cap.get(0).map_or("", |m| m.as_str());
-                if curr >= 0 && str.is_empty() {
-                    if str.chars().nth(curr as usize).unwrap().to_string() == "\\" {
-                        escaped = !escaped;
-                    } else {
-                        break;
-                    }
-                } else {
-                    break;
-                }
+
+                if curr < 0 { break; }
+                if str.is_empty() { break; }
+                if str.chars().nth(curr as usize).is_none() { break; }
+                if str.chars().nth(curr as usize).unwrap().to_string() != r#"\"# { break; }
+
+                escaped = !escaped;
             }
 
             return if escaped {

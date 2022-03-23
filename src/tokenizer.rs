@@ -811,7 +811,6 @@ impl ITokenizer for Tokenizer {
 
         if  self.rules.block.table.is_empty() { return None; }
 
-
         let table_caps = self.rules.block.exec_fc(src, MDBlock::Table, None);
 
         if table_caps.is_some() {
@@ -1236,7 +1235,6 @@ impl ITokenizer for Tokenizer {
                 }
             } else {
                 // find closing parenthesis
-                println!("Got inside caps");
                 let last_paren_idx = find_closing_bracket(cap2, "()");
                 if last_paren_idx > -1 {
                     let _start = raw.chars().position(|c| c == '!' );
@@ -1256,7 +1254,6 @@ impl ITokenizer for Tokenizer {
                     raw = &raw[0..link_len].trim();
                     cap3 = "";
                 }
-                println!("End of else");
             }
 
 

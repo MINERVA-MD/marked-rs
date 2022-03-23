@@ -285,13 +285,11 @@ impl ILexer for Lexer {
         let mut tokens = vec![];
         self.block_tokens(new_src.as_str(), &mut tokens);
 
-        // println!("{:#?}", tokens);
 
         while self.inline_queue.len() > 0 {
             let next = self.inline_queue.remove(0);
             let i_tokens = &mut next.token.as_ref().borrow_mut().tokens;
             self.inline_tokens(next.src.as_str(), i_tokens);
-            // println!("Tokens for {} ==> {:#?}", next.src.as_str(), i_tokens);
         }
 
         self.tokens.append(&mut tokens);
@@ -305,16 +303,13 @@ impl ILexer for Lexer {
         let mut tokens = vec![];
         self.block_tokens(new_src.as_str(), &mut tokens);
 
-        // println!("{:#?}", tokens);
-
         while self.inline_queue.len() > 0 {
             let next = self.inline_queue.remove(0);
             let i_tokens = &mut next.token.as_ref().borrow_mut().tokens;
             self.inline_tokens(next.src.as_str(), i_tokens);
-            // println!("Tokens for {} ==> {:#?}", next.src.as_str(), i_tokens);
         }
 
-        println!("{:#?}", tokens);
+        // println!("Tokens: {:#?}", tokens);
 
         self.tokens.append(&mut tokens);
         self.capture_tokens()
@@ -503,7 +498,6 @@ impl ILexer for Lexer {
                     token.unwrap()
                 ));
 
-                // println!("{:#?}", _token);
 
                 let l = _token.as_ref().borrow().items.len();
                 // Item child tokens handled here at end because we needed to have the final item to trim it first
@@ -552,8 +546,6 @@ impl ILexer for Lexer {
 
                 let idx = _token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
-
-                // println!("{:#?}", _token);
 
                 println!("Entered List Block");
 
@@ -635,6 +627,7 @@ impl ILexer for Lexer {
 
 
             // table (gfm)
+
             let mut inline_tokens = &mut vec![];
             token = self.tokenizer.table(_src.as_str(), inline_tokens);
             if token.is_some() {
@@ -655,7 +648,7 @@ impl ILexer for Lexer {
 
 
                         {
-                            token_rc.header[j].as_ref().borrow_mut().tokens = j_tokens;
+                            token_rc.header[j].as_ref().borrow_mut().tokens.append(&mut j_tokens);
                         }
 
                     }
@@ -670,7 +663,7 @@ impl ILexer for Lexer {
                             }
 
                             {
-                                token_rc.rows[j][k].as_ref().borrow_mut().tokens = j_tokens;
+                                token_rc.rows[j][k].as_ref().borrow_mut().tokens.append(&mut j_tokens);
                             }
 
                         }
@@ -739,7 +732,6 @@ impl ILexer for Lexer {
                         tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text("\n");
                         tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text(_token.as_ref().borrow_mut().text.as_str());
 
-                        println!("Removing last token");
                         self.inline_queue.remove(self.inline_queue.len() - 1);
 
                         let q_idx = self.inline_queue.len() - 1;
@@ -775,9 +767,6 @@ impl ILexer for Lexer {
                 let idx = _token.as_ref().borrow().raw.len();
                 _src = String::from(&_src[idx..]);
 
-                // println!("Text Token: {:#?}", _token);
-                // println!("Src in text block b4 continue: {:#?}", _src);
-
                 if tokens.len() > 0 {
                     let t_idx = tokens.len() - 1;
 
@@ -789,7 +778,6 @@ impl ILexer for Lexer {
                         tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text("\n");
                         tokens.get_mut(t_idx).unwrap().as_ref().borrow_mut().append_to_text(_token.as_ref().borrow_mut().text.as_str());
 
-                        println!("Removing last token from text block");
                         self.inline_queue.remove(self.inline_queue.len() - 1);
                         let q_idx = self.inline_queue.len() - 1;
                         self.inline_queue[q_idx].src = tokens.get_mut(t_idx).unwrap().as_ref().borrow().text.to_string();
@@ -1157,7 +1145,6 @@ impl ILexer for Lexer {
                 if last_char != '_' {
                     // Track prevChar before string of ____ started
                     prev_char = last_char.to_string();
-                    // println!("PrevChar: {} {}", prev_char, prev_char.len())
                 }
 
                 _keep_prev_char = true;
@@ -1168,16 +1155,13 @@ impl ILexer for Lexer {
 
                     if _last_token.as_ref().borrow()._type == "text"
                     {
-                        // println!("Changing last token");
                         _last_token.as_ref().borrow_mut().append_to_raw(inline_text_token.as_ref().borrow().raw.as_str());
                         _last_token.as_ref().borrow_mut().append_to_text(inline_text_token.as_ref().borrow().text.as_str());
                     } else {
                         tokens.push(inline_text_token);
-                        // println!("Token added via {} => {:#?}", _src_b, tokens);
                     }
                 } else {
                     tokens.push(inline_text_token);
-                    // println!("Token added via {} => {:#?}", _src_b, tokens);
                 }
                 continue;
             }
