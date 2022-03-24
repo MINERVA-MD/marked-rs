@@ -45,4 +45,5 @@ jobs:
         uses: actions-rs/cargo@v1
         continue-on-error: true  # WARNING: only for this example, remove it!
         with:
-          command: test --test run_specs
+          command: test
+          args: --test run_specs
