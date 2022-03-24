@@ -46,4 +46,4 @@ jobs:
         continue-on-error: true  # WARNING: only for this example, remove it!
         with:
           command: test
-          args: --test run_specs
+          args: test --test run_specs  -- --nocapture
