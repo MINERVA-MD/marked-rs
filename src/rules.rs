@@ -737,6 +737,7 @@ pub fn setup_inline_rules() -> Vec<Inline> {
         None
     );
 
+
     normal_inline.set_grammar_regex(
         MDInline::NoLink,
         Edit::new(normal_inline.no_link.to_string(), "")

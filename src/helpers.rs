@@ -1,43 +1,43 @@
 // Helpers
 #![allow(warnings, unused)]
+use std::cmp::max;
+use std::fmt::format;
 use std::borrow::{Cow};
-use std::collections::HashMap;
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 use urlencoding::{encode, decode};
 use fancy_regex::{Captures, Regex};
+use serde::{Serialize, Deserialize};
 
 
 use crate::lexer::regx;
 use crate::tokenizer::slice;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Spec {
+    pub markdown: String,
+    pub html: String,
+    pub example: i32,
+    pub start_line: i32,
+    pub end_line: i32,
+    pub section: String,
+    pub marked: String,
+    pub should_fail: bool
+}
+
+#[derive(Debug, Clone)]
+pub struct SpecSectionSummary {
+    pub section: String,
+    pub pass: i32,
+    pub total: i32,
+}
 
 lazy_static! {
     static ref ESCAPE_TEST: Regex = Regex::new("[&<>\"']").unwrap();
     static ref ESCAPE_TEST_NO_ENCODE: Regex = fancy_regex::Regex::new("[<>\"']|&(?!#?\\w+;)").unwrap();
     static ref UNESCAPE_TEST: Regex = Regex::new("(?i)&(#(?:\\d+)|(?:#x[0-9A-Fa-f]+)|(?:\\w+));?").unwrap();
     static ref CARET: Regex = Regex::new(r"(^|[^\\[])\\^").unwrap();
-
-    static ref SPECIALCHARS: HashMap<&'static str, &'static str> = {
-        let mut m = HashMap::new();
-        m.insert("%3B", ";");
-        m.insert("%2C", ",");
-        m.insert("%2F", "/");
-        m.insert("%3F", "?");
-        m.insert("%3A", ":");
-        m.insert("%40", "@");
-        m.insert("%26", "&");
-        m.insert("%3D", "=");
-        m.insert("%2B", "+");
-        m.insert("%24", "$");
-        m.insert("%21", "!");
-        m.insert("%2A", "*");
-        m.insert("%27", "'");
-        m.insert("%28", "(");
-        m.insert("%29", ")");
-        m.insert("%23", "#");
-        m
-    };
 }
-
 
 
 fn match_unescapes(cap: &Captures) -> String {
@@ -391,4 +391,84 @@ pub fn encode_uri(uri: &str) -> String {
         .replace("%29", ")")
         .replace("%23", "#")
 }
+
+pub fn get_completion_table(_title: &str, specs_summary: &mut Vec<SpecSectionSummary>) ->  String {
+
+    specs_summary.sort_by_key(|s| s.section.len());
+
+    let mut sum = 0;
+    let mut total = 0;
+    for spec in specs_summary.iter() {
+        sum += spec.pass;
+        total += spec.total;
+    }
+
+    let average = get_percentage_rounded(sum as f32, total as f32);
+    let title = format!("{} [{}]",
+                        _title,
+                        average
+    );
+
+    let mut max_specs = 0;
+    let mut longest_name = 0;
+
+    for summary in specs_summary.iter() {
+        longest_name = max(summary.section.len(), longest_name);
+        max_specs = max(summary.total, max_specs);
+    }
+
+    let max_space_len = ("".to_owned() + max_specs.to_string().as_str()).len();
+    let spaces = max_space_len * 2 + longest_name + 11;
+
+    let mut completion_table = String::from("");
+    let table_header_padding = ((spaces as f32 + title.len() as f32) / 2.00).ceil() as usize;
+    let mut table_header_text = format!("{:>min_length$}", title, min_length = table_header_padding);
+    table_header_text = format!("{:<min_length$}", table_header_text, min_length = spaces);
+
+    let mut table_header = format!("\n| {} |", table_header_text);
+
+    completion_table = format!("{:=<min_length$}", "=", min_length = spaces + 4);
+    completion_table = format!("{}{}",
+                               completion_table,
+                               table_header
+    );
+
+    completion_table = format!("{}\n{}",
+                               completion_table,
+                               format!("{:=<min_length$}", "=", min_length = spaces + 4)
+    );
+
+    completion_table = format!("{}\n| {} |",
+                               completion_table,
+                               format!("{:<min_length$}", " ", min_length = spaces)
+    );
+
+
+    for summary in specs_summary.iter() {
+        let percentage_passing = get_percentage_rounded(summary.pass as f32, summary.total as f32);
+        completion_table = format!("{}\n| {} {} of {} {}  |",
+                                   completion_table,
+                                   format!("{:<min_length$}", summary.section, min_length = longest_name),
+                                   format!("{:>min_length$}", summary.pass, min_length = max_space_len),
+                                   format!("{:>min_length$}", summary.total, min_length = max_space_len),
+                                   format!("{:>4}", percentage_passing),
+        );
+    }
+
+    completion_table = format!("{}\n{}\n",
+                               completion_table,
+                               format!("{:=<min_length$}", "=", min_length = spaces + 4)
+    );
+
+    completion_table
+}
+
+
+fn get_percentage_rounded(x: f32, y: f32) -> String {
+    // Convert to rounded percentage string.
+    let result = (x * 100.0) / y;
+    let rounded = result.round();
+    return format!("{}%", rounded);
+}
+
 

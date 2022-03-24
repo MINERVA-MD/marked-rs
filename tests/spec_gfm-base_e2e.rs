@@ -12,22 +12,11 @@ macro_rules! spec_test {
             use std::path::Path;
             use serde_json::Result;
             use test_case::test_case;
+            use marked_rs::helpers::Spec;
             use marked_rs::marked::Marked;
             use serde::{Serialize, Deserialize};
             use marked_rs::defaults::get_default_options;
             use pretty_assertions::{assert_eq, assert_ne};
-
-            #[derive(Serialize, Deserialize, Debug)]
-            struct Spec {
-                markdown: String,
-                html: String,
-                example: i32,
-                start_line: i32,
-                end_line: i32,
-                section: String,
-                marked: String,
-                should_fail: bool
-            }
 
             fn deserialize_specs(path: &str)-> String {
                 let data: String = fs::read_to_string(path)
@@ -41,11 +30,21 @@ macro_rules! spec_test {
                 return specs;
             }
 
+            fn html_entity_compare(str1: String, str2: String) {
+                let mut str1_decoded = String::from("");
+                let mut str2_decoded = String::from("");
+
+                html_escape::decode_html_entities_to_string(str1, &mut str1_decoded);
+                html_escape::decode_html_entities_to_string(str2, &mut str2_decoded);
+
+                pretty_assertions::assert_eq!(str1_decoded, str2_decoded);
+            }
+
             seq!(N in $from..$to {
 
                 #(#[test_case(N + 1)])*
                 #[timeout(8000)]
-                fn verify_specs(index: usize) {
+                fn verify_gfm_base_specs(index: usize) {
                     let specs: Vec<Spec> = get_specs();
                     let spec: &Spec = &specs[index];
 
@@ -63,21 +62,16 @@ macro_rules! spec_test {
 
                     let actual_html = marked.parse(md, Some(options), None);
 
-                    if !(*spec_should_fail) {
-                        //println!("Expected: {} | \nAcutal  : {}", *expected_marked_html, actual_html);
-                        if *expected_marked_html != actual_html {
+                    if *expected_marked_html != actual_html {
 
-                            if *&spec.example == 603 ||
-                            *&spec.example == 604 ||
-                            *&spec.example == 611
-                                {
-                                    pretty_assertions::assert_eq!(true, true);
-                                    return;
-                                }
-                            println!("Failing Spec : {}", &spec.example)
+                        if vec![603, 604, 611].contains(&*&spec.example)
+                        {
+                            html_entity_compare(String::from(expected_marked_html), actual_html);
+                            return;
                         }
-                        pretty_assertions::assert_eq!(*expected_marked_html, actual_html)
+                        println!("Failing Spec : {}", &spec.example)
                     }
+                    pretty_assertions::assert_eq!(*expected_marked_html, actual_html);
                 }
             });
         }

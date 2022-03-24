@@ -112,5 +112,28 @@ pub fn get_default_options() -> Options {
     }
 }
 
+pub fn get_options(gfm: bool, pedantic: bool, header_ids: bool) -> Options {
+    Options {
+        base_url: "",
+        breaks: false,
+        extensions: None,
+        gfm,
+        header_ids,
+        header_prefix: "",
+        lang_prefix: "language-",
+        mangle: true,
+        pedantic,
+        sanitize: false,
+        sanitizer: None,
+        silent: false,
+        smart_lists: false,
+        smartypants: false,
+        is_highlight: false,
+        tokenizer: None,
+        walk_tokens: None,
+        xhtml: false
+    }
+}
+
 
 
