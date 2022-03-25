@@ -73,6 +73,7 @@ pub fn expect_links(md: &str, options: Options, expected_links: Vec<Link>) {
 #[cfg(test)]
 mod lexer {
     use std::fs::OpenOptions;
+    use std::path::Path;
     use marked_rs::defaults::get_default_options;
     use marked_rs::helpers::{get_completion_table, SpecSectionSummary};
     use marked_rs::marked::Marked;
@@ -10708,11 +10709,16 @@ paragraph
         let md = fs::read_to_string("tests/fixtures/md/spec.md").expect("Unable to read file");
         let html = marked.parse(md.as_str(), None, None);
 
+        let spec_path = "tests/fixtures/md/spec.html";
+        if Path::new(spec_path).exists() {
+            fs::remove_file(spec_path);
+        }
+
         let mut file = OpenOptions::new()
             .create_new(true)
             .write(true)
-            .append(true)
-            .open("tests/fixtures/md/spec.html")
+            .truncate(true)
+            .open(spec_path)
             .unwrap();
 
         if let Err(e) = writeln!(file, "{}", html) {
