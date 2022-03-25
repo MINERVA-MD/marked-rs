@@ -65,7 +65,12 @@ pub fn run_specs(title: &str, dir: &str, show_completion_table: bool, options: O
 
     if show_completion_table {
         let completion_table = get_completion_table(title, &mut specs_summary);
-        write_table("completion_table.txt", completion_table.clone());
+
+        let now = Utc::now();
+        let res = now.format("%Y-%m-%d@%H-%M-%S");
+
+        let table = format!("tests/specs/{}_{}.spec.txt", title.replace(" ", "-").as_str(), res);
+        write_table(table.as_str(), completion_table.clone());
     }
 }
 
@@ -152,9 +157,9 @@ pub fn run_md_specs<'a>(title: &str, dir: &str, show_completion_table: bool) {
         let completion_table = get_completion_table(title, &mut specs_summary);
 
         let now = Utc::now();
-        let res = now.format("%Y-%m-%d|%H:%M:%S");
+        let res = now.format("%Y-%m-%d@%H-%M-%S");
 
-        let table = format!("{}_{}.spec.txt", title.to_lowercase(), res);
+        let table = format!("tests/specs/{}_{}.spec.txt", title.replace(" ", "-").as_str(), res);
         write_table(table.as_str(), completion_table.clone());
     }
 }
@@ -215,14 +220,14 @@ mod specs {
         run_specs("CommonMark", "tests/fixtures/marked-specs/commonmark", true, options);
 
         options = get_base_options(true, false, false, false);
-        run_specs("GitHub Flavored Markdown", "tests/fixtures/marked-specs/gfm", true, options);
+        run_specs("GFM", "tests/fixtures/marked-specs/gfm", true, options);
     }
 
     #[ignore]
     #[timeout(800000)]
     fn run_og_new_specs() {
-        run_md_specs("Original", "tests/fixtures/marked-specs/original/json", false);
-        run_md_specs("New", "tests/fixtures/marked-specs/new/json", false);
+        run_md_specs("Original", "tests/fixtures/marked-specs/original/json", true);
+        run_md_specs("New", "tests/fixtures/marked-specs/new/json", true);
     }
 
     fn output_completion_table() {
