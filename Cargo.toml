@@ -10,7 +10,7 @@ edition = "2021"
 crate-type = ["lib", "cdylib"]
 
 [features]
-default = ["console_error_panic_hook"]
+default = ["console_error_panic_hook", "wee_alloc"]
 
 [dev-dependencies]
 criterion = "0.3"
@@ -20,8 +20,8 @@ name = "my_benchmark"
 harness = false
 
 [profile.release]
-# Tell `rustc` to optimize for small code size.
-opt-level = "s"
+lto = true
+opt-level = 3
 
 [dependencies]
 url = "2.2.2"

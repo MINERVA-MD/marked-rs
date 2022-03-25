@@ -1,5 +1,6 @@
 #![allow(warnings, unused)]
 use std::fs;
+use std::io::Write;
 use ntest::timeout;
 use test_case::test_case;
 
@@ -71,8 +72,10 @@ pub fn expect_links(md: &str, options: Options, expected_links: Vec<Link>) {
 
 #[cfg(test)]
 mod lexer {
+    use std::fs::OpenOptions;
     use marked_rs::defaults::get_default_options;
     use marked_rs::helpers::{get_completion_table, SpecSectionSummary};
+    use marked_rs::marked::Marked;
     use marked_rs::rules::test;
     use super::*;
 
@@ -10696,6 +10699,25 @@ paragraph
         let mut options = get_default_options();
 
         expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[test]
+    #[timeout(80000)]
+    fn check_md_file() {
+        let mut marked = Marked::new(None);
+        let md = fs::read_to_string("tests/fixtures/md/spec.md").expect("Unable to read file");
+        let html = marked.parse(md.as_str(), None, None);
+
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .append(true)
+            .open("tests/fixtures/md/spec.html")
+            .unwrap();
+
+        if let Err(e) = writeln!(file, "{}", html) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
     }
 }
 
