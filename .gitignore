@@ -1,5 +1,5 @@
 /target
-pkg
+#pkg
 md4rs
 Cargo.lock
 

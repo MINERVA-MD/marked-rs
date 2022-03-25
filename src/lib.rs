@@ -1,8 +1,9 @@
-use regex::Regex;
+use crate::marked::Marked;
 use wasm_bindgen::prelude::*;
 
 pub mod lexer;
 pub mod rules;
+pub mod token;
 pub mod marked;
 pub mod parser;
 pub mod slugger;
@@ -10,44 +11,28 @@ pub mod helpers;
 pub mod defaults;
 pub mod renderer;
 pub mod tokenizer;
-pub mod text_renderer;
 pub mod extension;
-pub mod token;
+pub mod text_renderer;
 
-
-// pub fn parse(markdown: &str) -> String  {
-//     return parser::parse::Parser::parse(markdown);
-// }
-
+// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
+// allocator.
+#[cfg(feature = "wee_alloc")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-pub fn parse(markdown: &str)-> String {
-    let mut html = String::from(markdown);
+pub fn parse(md: &str)-> String {
+    // When the `console_error_panic_hook` feature is enabled, we can call the
+    // `set_panic_hook` function at least once during initialization, and then
+    // we will get better error messages if our code ever panics.
+    //
+    // For more details see
+    // https://github.com/rustwasm/console_error_panic_hook#readme
+    #[cfg(feature = "console_error_panic_hook")]
+    console_error_panic_hook::set_once();
 
-    let h3_re = Regex::new(r"^### (.*$)").unwrap();
-    let h2_re = Regex::new(r"^## (.*$)").unwrap();
-    let h1_re = Regex::new(r"^# (.*$)").unwrap();
-    let b_re = Regex::new(r"\*\*(.*)\*\*").unwrap();
-    let i_re = Regex::new(r"\*(.*)\*").unwrap();
+    let mut marked = Marked::new(None);
+    let html = marked.parse(md, None, None);
 
-    html = h3_re.replace_all(&html, "<h3>$1</h3>").parse().unwrap();
-    html = h2_re.replace_all(&html, "<h2>$1</h2>").parse().unwrap();
-    html = h1_re.replace_all(&html, "<h1>$1</h1>").parse().unwrap();
-    html = b_re.replace_all(&html, "<b>$1</b>").parse().unwrap();
-    html = i_re.replace_all(&html, "<i>$1</i>").parse().unwrap();
-
-    // println!("{}", re.is_match(&html));
-    println!("{}", html);
-
-    return html;
-}
-
-pub fn run()  {
-    // parser::parse::Parser::parse(&"### Test");
-    // parser::parse::Parser::parse(&"## Test");
-    // parser::parse::Parser::parse(&"# Test");
-    // parser::parse::Parser::parse(&"**Test**");
-    // parser::parse::Parser::parse(&"*Test*");
-    // let entity = parser::entity::Entity::entity_lookup("&Abreve;");
-    // println!("{:?}", entity.unwrap());
+    html
 }

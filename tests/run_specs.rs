@@ -121,8 +121,6 @@ pub fn run_md_specs<'a>(title: &str, dir: &str, show_completion_table: bool) {
 
             let mut spec_passed = *expected_html == actual_html && !*spec_should_fail;
 
-            // TODO: Example 16: change header_ids to true
-            // TODO: Check when escape is allowed, seems a bit inconsistent
             if !spec_passed {
                 html_entity_compare(String::from(expected_html), actual_html);
                 spec_passed = true;
