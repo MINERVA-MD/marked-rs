@@ -8,6 +8,7 @@ use test_case::test_case;
 use std::fs::OpenOptions;
 use marked_rs::marked::Marked;
 use std::collections::HashMap;
+use chrono::Utc;
 use pretty_assertions::{assert_eq, assert_ne};
 use marked_rs::defaults::{get_options, Options};
 use marked_rs::helpers::{get_completion_table, MdSpec, Spec, SpecSectionSummary};
@@ -149,7 +150,12 @@ pub fn run_md_specs<'a>(title: &str, dir: &str, show_completion_table: bool) {
 
     if show_completion_table {
         let completion_table = get_completion_table(title, &mut specs_summary);
-        write_table("completion_table.txt", completion_table.clone());
+
+        let now = Utc::now();
+        let res = now.format("%Y-%m-%d|%H:%M:%S");
+
+        let table = format!("{}_{}.spec.txt", title.to_lowercase(), res);
+        write_table(table.as_str(), completion_table.clone());
     }
 }
 
@@ -166,6 +172,7 @@ fn html_entity_compare(str1: String, str2: String) -> bool {
 
 fn write_table(path: &str, table: String) {
     let mut file = OpenOptions::new()
+        .create_new(true)
         .write(true)
         .append(true)
         .open(path)
