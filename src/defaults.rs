@@ -112,7 +112,7 @@ pub fn get_default_options() -> Options {
     }
 }
 
-pub fn get_options(gfm: bool, pedantic: bool, header_ids: bool) -> Options {
+pub fn get_base_options(gfm: bool, pedantic: bool, header_ids: bool, sanitize: bool) -> Options {
     Options {
         base_url: "",
         breaks: false,
@@ -123,7 +123,7 @@ pub fn get_options(gfm: bool, pedantic: bool, header_ids: bool) -> Options {
         lang_prefix: "language-",
         mangle: true,
         pedantic,
-        sanitize: false,
+        sanitize,
         sanitizer: None,
         silent: false,
         smart_lists: false,
@@ -132,6 +132,41 @@ pub fn get_options(gfm: bool, pedantic: bool, header_ids: bool) -> Options {
         tokenizer: None,
         walk_tokens: None,
         xhtml: false
+    }
+}
+
+
+pub fn get_options(
+    gfm: bool,
+    pedantic: bool,
+    header_ids: bool,
+    sanitize: bool,
+    breaks: bool,
+    mangle: bool,
+    silent: bool,
+    smart_lists: bool,
+    smartypants: bool,
+    xhtml: bool
+) -> Options {
+    Options {
+        base_url: "",
+        breaks,
+        extensions: None,
+        gfm,
+        header_ids,
+        header_prefix: "",
+        lang_prefix: "language-",
+        mangle,
+        pedantic,
+        sanitize,
+        sanitizer: None,
+        silent,
+        smart_lists,
+        smartypants,
+        is_highlight: false,
+        tokenizer: None,
+        walk_tokens: None,
+        xhtml
     }
 }
 

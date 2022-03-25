@@ -10586,7 +10586,7 @@ paragraph
     #[test]
     #[timeout(8000)]
     fn test_spec_summary_table() {
-        let spec_summaries = vec![
+        let mut spec_summaries = vec![
             SpecSectionSummary {
                 section: "Tabs".to_string(),
                 pass: 11,
@@ -10613,10 +10613,90 @@ paragraph
                 total: 131,
             }
         ];
-        let completion_table = get_completion_table("Commonmark", spec_summaries);
+        let completion_table = get_completion_table("Commonmark", &mut spec_summaries);
 
         println!("{}", completion_table);
     }
 
+    #[ignore]
+    #[timeout(8000)]
+    fn check_new_example_2() {
+        let md = "(See https://www.example.com/fhqwhgads.)\n\n((http://foo.com))\n\n((http://foo.com.))\n\nHTTP://FOO.COM\n\nhTtP://fOo.CoM\n\n~~hello@email.com~~\n\n**me@example.com**\n\n__test@test.com__";
+        let mut tokens = vec![
+
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[ignore]
+    #[timeout(8000)]
+    fn check_new_example_17() {
+        let md = "> hello\n> [1]: hello\n\n* * *\n\n> hello\n[2]: hello\n\n\n* hello\n* [3]: hello\n\n\n* hello\n[4]: hello\n\n\n> foo\n> bar\n[5]: foo\n> bar\n";
+        let mut tokens = vec![
+
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[ignore]
+    #[timeout(8000)]
+    fn check_new_example_22() {
+        let md = "_123_\n\n*123*\n\n_12_\n\n*12*\n\n_1_\n\n*1*\n\n__\n\n**\n\n_123 _\n\n*123 *\n\n_ 123_\n\nIt’s levi*OH*sa, not levio*SAH.*\n\n__ test [test](https://test.com/_)\n";
+        let mut tokens = vec![
+
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[ignore]
+    #[timeout(8000)]
+    fn check_new_example_35() {
+        let md = "### Heading with <em>html</em>\n\n### Heading with a [link](http://github.com/)\n\n### Heading with some _italic text_\n\n### Or some **strong**\n(which doesn't really make any difference, here)\n\n### Or even `code`\n\n### What about ~~strikethrough~~\n\n## And a ref [link][destination]\n\n[destination]: /some/url \"link to nowhere\"\n";
+        let mut tokens = vec![
+
+        ];
+
+        let links = vec![];
+        let mut options = get_default_options();
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+    #[ignore]
+    #[timeout(8000)]
+    fn check_new_example_47() {
+        let md = "![](img1.svg) (or ![](img2.svg))\n\n![one](img1.svg) (or ![two](img2.svg))\n";
+        let mut tokens = vec![];
+
+        let links = vec![];
+        let mut options = get_default_options();
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
+
+
+    #[test]
+    #[timeout(8000)]
+    fn check_new_example_79() {
+        let md = "# Absolutization of RFC 3986 URIs\n\n## Absolute URI\n[![section 4.3](http://example.com/logo)](http://example.com/)\n\n## Network-path reference\n[![section 4.2](//example.com/logo)](//example.com/)\n\n## Absolute path\n[![section 4.2](/path/to/img)](/path/to/content)\n\n## Relative path\n[![section 4.2](img)](content)\n\n## Dot-relative path\n[![section 3.3](./img)](./content)\n\n[![section 3.3](../img)](../content)\n\n## Same-document query\n[![section 4.4](?type=image)](?)\n\n## Same-document fragment\n[![section 4.4](#img)](#)\n\n## Empty\n[section 4.2]()\n";
+        let mut tokens = vec![];
+
+        let links = vec![];
+        let mut options = get_default_options();
+
+        expect_tokens(md, options, &mut tokens, links);
+    }
 }
 

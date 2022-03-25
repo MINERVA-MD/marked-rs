@@ -34,7 +34,7 @@ pub struct InlineToken {
 
 pub trait ILexer {
     fn lex_ac<'a>(&mut self, src: &str) -> Vec<token::Token>;
-    fn lex<'a>(&mut self, src: &str) -> Vec<Rc<RefCell<Token>>>;
+    fn lex<'a>(&mut self, src: &str) -> &mut Vec<Rc<RefCell<Token>>>;
     fn inline(&mut self, src: &str, token: Rc<RefCell<Token>>);
     fn lex_inline(&mut self, src: &str, options: Options) -> Vec<Rc<RefCell<Token>>>;
     fn block_tokens<'a>(&mut self, src: &str, tokens: &'a mut Vec<Rc<RefCell<Token>>>) -> &'a mut Vec<Rc<RefCell<Token>>>;
@@ -278,7 +278,7 @@ impl Lexer {
 
 impl ILexer for Lexer {
 
-    fn lex<'a>(&mut self, src: &str) -> Vec<Rc<RefCell<Token>>> {
+    fn lex<'a>(&mut self, src: &str) -> &mut Vec<Rc<RefCell<Token>>> {
         let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
         new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
 
@@ -292,16 +292,20 @@ impl ILexer for Lexer {
             self.inline_tokens(next.src.as_str(), i_tokens);
         }
 
+        // println!("Tokens: {:#?}", tokens);
+
         self.tokens.append(&mut tokens);
-        self.tokens.clone()
+        // self.tokens.clone()
+        &mut self.tokens
     }
 
     fn lex_ac<'a>(&mut self, src: &str) -> Vec<token::Token> {
         let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
         new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
-
+        
         let mut tokens = vec![];
         self.block_tokens(new_src.as_str(), &mut tokens);
+
 
         while self.inline_queue.len() > 0 {
             let next = self.inline_queue.remove(0);
@@ -498,7 +502,6 @@ impl ILexer for Lexer {
                     token.unwrap()
                 ));
 
-
                 let l = _token.as_ref().borrow().items.len();
                 // Item child tokens handled here at end because we needed to have the final item to trim it first
 
@@ -510,7 +513,7 @@ impl ILexer for Lexer {
                                       &mut block_tokens
                     );
 
-                    _token.as_ref().borrow_mut().items[i].as_ref().borrow_mut().tokens.append(&mut block_tokens);
+                    _token.as_ref().borrow_mut().items[i].as_ref().borrow_mut().tokens = block_tokens;
 
                     let spacers: Vec<Rc<RefCell<Token>>> = _token.as_ref().borrow_mut().items[i].as_ref().borrow().tokens.clone()
                         .into_iter()
@@ -599,7 +602,7 @@ impl ILexer for Lexer {
                         _last_token.append_to_raw(_token.as_ref().borrow_mut().raw.as_str());
 
                         _last_token.append_to_text("\n");
-                        _last_token.append_to_text(_token.as_ref().borrow_mut().text.as_str());
+                        _last_token.append_to_text(_token.as_ref().borrow_mut().raw.as_str());
 
                         let q_idx = self.inline_queue.len() - 1;
                         self.inline_queue[q_idx].src = _last_token.text.to_string();
@@ -627,7 +630,6 @@ impl ILexer for Lexer {
 
 
             // table (gfm)
-
             let mut inline_tokens = &mut vec![];
             token = self.tokenizer.table(_src.as_str(), inline_tokens);
             if token.is_some() {
@@ -754,10 +756,10 @@ impl ILexer for Lexer {
             if token.is_some() {
                 // println!("Entered Text Block");
 
-
                 let mut _token: Rc<RefCell<Token>> = Rc::new(RefCell::new(
                     token.unwrap()
                 ));
+
 
                 // TODO: This is the incorrect call here - call should be made to self.inline instead
                 {
@@ -787,6 +789,7 @@ impl ILexer for Lexer {
                 } else {
                     tokens.push(_token);
                 }
+                // // println!("Text Token After: {:#?}", _token.clone());
                 continue;
             }
 
@@ -1138,6 +1141,8 @@ impl ILexer for Lexer {
                 // println!("Entered Inline Text");
                 let inline_text_token = Rc::new(RefCell::new(token.unwrap()));
                 let idx = inline_text_token.as_ref().borrow().raw.len();
+
+                // // println!("Inline Text Token: {:#?}", inline_text_token);
 
                 _src = String::from(&_src[idx..]);
 

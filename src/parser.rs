@@ -87,7 +87,6 @@ impl IParser for Parser {
                     {
                         let mut heading_token_rc = token.as_ref().borrow_mut();
 
-
                         let text =  {
                             self.parse_inline(&mut heading_token_rc.tokens, Renderer::new(self.options))
                         };
@@ -95,6 +94,8 @@ impl IParser for Parser {
                         let level = {
                             heading_token_rc.depth
                         };
+
+
 
                         let _raw = {
                             self.parse_inline_tr(&mut heading_token_rc.tokens, TextRenderer::new())
@@ -531,7 +532,7 @@ impl IParser for Parser {
                         out.push_str(renderer.text(escape_token.text.as_str()).as_str());
                     }
 
-                    break;
+                    continue;
                 }
 
                 "html"          => {
@@ -540,7 +541,7 @@ impl IParser for Parser {
                         out.push_str(renderer.html(html_token.text.as_str()).as_str());
                     }
 
-                    break;
+                    continue;
                 }
 
                 "link"          => {
@@ -555,7 +556,7 @@ impl IParser for Parser {
                         ).as_str());
                     }
 
-                    break;
+                    continue;
                 }
 
                 "image"         => {
@@ -567,7 +568,7 @@ impl IParser for Parser {
                             image_token.text.as_str()
                         ).as_str());
                     }
-                    break;
+                    continue;
                 }
 
                 "strong"        => {
@@ -576,7 +577,7 @@ impl IParser for Parser {
                         let _text = self.parse_inline_tr(&mut strong_token.tokens, renderer);
                         out.push_str(renderer.strong(_text.as_str()).as_str());
                     }
-                    break;
+                    continue;
                 }
 
                 "em"            => {
@@ -585,7 +586,7 @@ impl IParser for Parser {
                         let _text = self.parse_inline_tr(&mut em_token.tokens, renderer);
                         out.push_str(renderer.em(_text.as_str()).as_str());
                     }
-                    break;
+                    continue;
                 }
 
                 "codespan"      => {
@@ -593,12 +594,12 @@ impl IParser for Parser {
                         let codespan_token = token.as_ref().borrow();
                         out.push_str(renderer.codespan(codespan_token.text.as_str()).as_str());
                     }
-                    break;
+                    continue;
                 }
 
                 "br"            => {
                     out.push_str(renderer.br().as_str());
-                    break;
+                    continue;
                 }
 
                 "del"           => {
@@ -607,7 +608,7 @@ impl IParser for Parser {
                         let _text = self.parse_inline_tr(&mut del_token.tokens, renderer);
                         out.push_str(renderer.del(_text.as_str()).as_str());
                     }
-                    break;
+                    continue;
                 }
 
                 "text"          => {
@@ -615,7 +616,7 @@ impl IParser for Parser {
                         let text_token = token.as_ref().borrow();
                         out.push_str(renderer.text(text_token.text.as_str()).as_str());
                     }
-                    break;
+                    continue;
                 }
 
                 _               => {

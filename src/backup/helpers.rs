@@ -1,11 +1,8 @@
 // Helpers
 #![allow(warnings, unused)]
-use std::fs;
 use std::cmp::max;
-use std::io::Write;
 use std::fmt::format;
 use std::borrow::{Cow};
-use std::fs::OpenOptions;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use urlencoding::{encode, decode};
@@ -248,14 +245,9 @@ pub fn resolve_url(base: &str, href: &str) -> String {
 
     let mut _base = String::from(base);
 
-    let protocol_str = "^([^:]+:)[\\s\\S]*$";
-    let just_domain_str = "^[^:]+:/*[^/]*$";
-    let domain_str = "^([^:]+:/*[^/]*)[\\s\\S]*$";
-
-    let protocol_re = regx(protocol_str);
-    let just_domain_re = regx(just_domain_str);
-    let domain_re = regx(domain_str);
-
+    let protocol_re = regx(r#"^([^:]+:)[\s\S]*$"#);
+    let just_domain_re = regx(r#"^[^:]+:\\/*[^/]*$"#);
+    let domain_re = regx(r#"^([^:]+:\\/*[^/]*)[\s\S]*$"#);
 
     let mut base_url = String::from("");
     let just_domain_caps = just_domain_re.captures(_base.as_str());
@@ -266,11 +258,10 @@ pub fn resolve_url(base: &str, href: &str) -> String {
         base_url = rtrim(_base.as_str(), "/", true);
     }
 
-    _base = format!("{}", base_url);
+    _base = format!(" {}", base_url);
     let relative_base = _base.find(":");
 
-
-    return if slice(href, 0..2) == r#"//"# {
+    return if slice(href, 0..2) == "//" {
         if relative_base.is_none() {
             return String::from(href);
         }
@@ -282,12 +273,11 @@ pub fn resolve_url(base: &str, href: &str) -> String {
                 href
         )
     } else if href.chars().nth(0).is_some() &&
-        (href.chars().nth(0).unwrap().to_string() == r#"/"#)
+        (href.chars().nth(0).unwrap().to_string() == "/")
     {
         if relative_base.is_none() {
             return String::from(href);
         }
-
         let base_domain_replaced = domain_re
             .replace(_base.as_str(), "${1}")
             .to_string();

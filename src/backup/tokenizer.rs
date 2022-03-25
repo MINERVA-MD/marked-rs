@@ -1,15 +1,15 @@
-use std::{fmt, fs};
-use std::cell::{Ref, RefCell};
-use std::cmp::min;
-use std::fmt::Formatter;
-use std::ops::Range;
+#![allow(warnings, unused)]
 use std::rc::Rc;
+use std::cmp::min;
+use std::{fmt};
+use std::ops::Range;
+use std::cell::RefCell;
 use fancy_regex::Captures;
-use regex::Regex;
+
 use crate::defaults::Options;
-use crate::helpers::{escape, find_closing_bracket, rtrim, split_cells};
+use crate::lexer::{InlineToken, Lexer, regx};
 use crate::rules::{get_rules, MDBlock, MDInline, Rules};
-use crate::lexer::{ILexer, InlineToken, Lexer, regx};
+use crate::helpers::{escape, find_closing_bracket, is_divisible, is_not_divisible, is_odd, rtrim, split_cells};
 
 
 #[derive(Clone, PartialEq, Debug)]
@@ -39,7 +39,6 @@ pub struct Token {
     pub header: Vec<Rc<RefCell<Token>>>,
     pub code_block_style: String
 }
-
 
 
 #[derive(Clone, PartialEq, Debug)]
@@ -240,6 +239,9 @@ impl ITokenizer for Tokenizer {
     }
 
     fn fences(&mut self, src: &str) -> Option<Token> {
+
+        if  self.rules.block.fences.is_empty()  { return None; }
+
         let fences_caps = self.rules.block.exec_fc(src, MDBlock::Fences, None);
 
         if fences_caps.is_some() {
@@ -293,9 +295,8 @@ impl ITokenizer for Tokenizer {
             let mut text = caps.get(2).map_or("", |m| m.as_str()).trim().to_string();
 
             if regx("#$").is_match(text.as_str()) {
-                let trimmed = regx("#*$").replace_all(text.as_str(), "").to_string();
-                // TODO : ^ Implement proper rtrim
-                println!("Trimmed:{}************************", trimmed);
+                let trimmed = rtrim(text.as_str(), "#", false);
+
                 if self.options.pedantic {
                     text = trimmed.trim().to_string();
                 } else if trimmed == "" || regx(" $").is_match(trimmed.as_str()) {
@@ -420,11 +421,12 @@ impl ITokenizer for Tokenizer {
         let mut list_caps = self.rules.block.exec_fc(src, MDBlock::List, None);
         let mut _src: String = String::from(src);
 
+
         if list_caps.is_some() {
 
             let mut is_task = false;
             let mut blank_line = false;
-            let mut indent:usize  = 0;
+            let mut indent: usize  = 0;
             let mut is_checked = false;
             let mut ends_with_blank_line = false;
             let mut item_contents = String::from("");
@@ -434,6 +436,8 @@ impl ITokenizer for Tokenizer {
 
             let mut bull = cap1.trim().to_string();
             let is_ordered = bull.len() > 1;
+
+
 
             let start: i32 = if is_ordered {
                 let num = slice(bull.as_str(), 0..bull.len() - 1).to_string();
@@ -516,7 +520,7 @@ impl ITokenizer for Tokenizer {
                 let _cap1 = _caps.get(1).map_or("", |m| m.as_str());
                 let _cap2 = _caps.get(2).map_or("", |m| m.as_str());
 
-                _src = String::from(&_src[raw.len()..]);
+                _src = slice(_src.as_str(), raw.len().. _src.len());
 
                 let mut lines: Vec<String> = _cap2.splitn(2,"\n")
                     .map(|x| x.to_string())
@@ -533,6 +537,7 @@ impl ITokenizer for Tokenizer {
                 let mut line = String::from(lines.get(0).unwrap());
                 let mut next_line = String::from(next_lines.get(0).unwrap());
 
+
                 if self.options.pedantic {
                     indent = 2;
                     item_contents = line.trim_start().to_string();
@@ -542,7 +547,7 @@ impl ITokenizer for Tokenizer {
                         .unwrap()
                         .start();
                     indent = if indent > 4 { 1 } else { indent };
-                    item_contents = String::from(&line[indent..]);
+                    item_contents = slice(line.as_str(), indent..line.len());
                     indent += _cap1.len();
                 }
 
@@ -552,7 +557,7 @@ impl ITokenizer for Tokenizer {
                     .is_match(next_line.as_ref())
                 {
                     raw = format!("{}{}\n", raw.to_string(), next_line);
-                    _src = String::from(&_src[next_line.len()..]);
+                    _src = slice(_src.as_str(), next_line.len() + 1.._src.len());
                     end_early = true;
                 }
 
@@ -567,6 +572,7 @@ impl ITokenizer for Tokenizer {
                             .collect();
 
                         let mut raw_line = raw_lines.get(0).unwrap();
+
                         line = String::from(raw_line.clone());
 
                         // Re-align to follow commonmark nesting rules
@@ -613,7 +619,7 @@ impl ITokenizer for Tokenizer {
 
                         // TODO: double check guard, place relevant guards at other substrings/slice
                         if raw_line.len() + 1 < _src.len() {
-                            _src = String::from(&_src[raw_line.len() + 1..]);
+                            _src = slice(_src.as_str(), raw_line.len() + 1.._src.len());
                         } else {
                             _src = "".to_string();
                         }
@@ -649,6 +655,7 @@ impl ITokenizer for Tokenizer {
                     }
                 }
 
+
                 list.items.push(
                     Rc::new(RefCell::new(
                         Token {
@@ -682,6 +689,7 @@ impl ITokenizer for Tokenizer {
 
                 list.raw = format!("{}{}", list.raw, raw);
             }
+
             // Do not consume newlines at end of final item. Alternatively, make itemRegex *start* with any newlines to simplify/speed up endsWithBlankLine logic
             let list_item_idx = list.items.len() - 1;
             let mut last_list_item = list.items.get_mut(list_item_idx).unwrap();
@@ -690,18 +698,25 @@ impl ITokenizer for Tokenizer {
             last_list_item.as_ref().borrow_mut().text = String::from(item_contents.trim_end());
             list.raw = String::from(list.raw.trim_end());
 
+
             return Some(list);
         }
         None
     }
 
     fn html(&mut self, src: &str) -> Option<Token> {
-        let html_caps = self.rules.block.exec_fc(src, MDBlock::Html, None);
+        // let html_caps = self.rules.block.exec_fc(src, MDBlock::Html, None);
+        // println!("{:#?}", self.rules.inline.url);
+
+        let html_re_str =  self.rules.block.html.as_str();
+        let html_re = regress::Regex::with_flags(html_re_str, "i").unwrap();
+        let html_caps = html_re.find(src);
 
         if html_caps.is_some() {
             let caps = html_caps.unwrap();
-            let raw = caps.get(0).map_or("", |m| m.as_str());
-            let cap_1 = caps.get(1).map_or("", |m| m.as_str());
+
+            let raw = caps.group(0).map_or("", |r| { &src[r] });
+            let cap_1 = caps.group(1).map_or("", |r| { &src[r] });
 
             let pre = !self.options.sanitizer.is_some() &&
                 cap_1 == "pre" ||
@@ -796,6 +811,8 @@ impl ITokenizer for Tokenizer {
     }
 
     fn table(&mut self, src: &str, mut tokens: &mut Vec<InlineToken>) -> Option<Token> {
+
+        if  self.rules.block.table.is_empty() { return None; }
 
         let table_caps = self.rules.block.exec_fc(src, MDBlock::Table, None);
 
@@ -1139,13 +1156,13 @@ impl ITokenizer for Tokenizer {
 
             if !*in_link && regx(r#"(?i)^<a "#).is_match(raw) {
                 *in_link = true;
-            } else if *in_link && regx(r#"(?i)^<\/a>"#).is_match(raw) {
+            } else if *in_link && regx(r#"(?i)^<\\/a>"#).is_match(raw) {
                 *in_link = false;
             }
 
-            if !*in_raw_block && regx(r#"(?i)^<(pre|code|kbd|script)(\s|>)"#).is_match(raw) {
+            if !*in_raw_block && fancy_regex::Regex::new(r#"(?i)^<(pre|code|kbd|script)(\s|>)"#).unwrap().is_match(raw).unwrap() {
                 *in_raw_block = true;
-            } else if *in_raw_block && regx(r#"(?i)^<\/(pre|code|kbd|script)(\s|>)"#).is_match(raw) {
+            } else if *in_raw_block && fancy_regex::Regex::new(r#"(?i)^<\/(pre|code|kbd|script)(\s|>)"#).unwrap().is_match(raw).unwrap() {
                 *in_raw_block = false;
             }
 
@@ -1182,8 +1199,8 @@ impl ITokenizer for Tokenizer {
                 pre: false,
                 task: false,
                 checked: false,
-                in_link: false,
-                in_raw_block: false,
+                in_link: token_in_link,
+                in_raw_block: token_in_raw_block,
                 links: vec![],
                 align: vec![],
                 rows: vec![],
@@ -1195,12 +1212,14 @@ impl ITokenizer for Tokenizer {
     }
 
     fn link(&mut self, src: &str) -> Option<Token> {
+
         let link_caps = self.rules.inline.exec_fc(src, MDInline::Link, None);
 
         if link_caps.is_some() {
+
             let caps = link_caps.unwrap();
             let mut raw = caps.get(0).map_or("", |m| m.as_str());
-            let mut cap1 = caps.get(1).map_or("", |m| m.as_str());
+            let cap1 = caps.get(1).map_or("", |m| m.as_str());
             let mut cap2 = caps.get(2).map_or("", |m| m.as_str());
             let mut cap3 = caps.get(3).map_or("", |m| m.as_str());
 
@@ -1210,21 +1229,22 @@ impl ITokenizer for Tokenizer {
                 if !regx(r#">$"#).is_match(trimmed_url) {
                     return None;
                 }
-            }
 
-            let trimmed_url_slice = &trimmed_url[..trimmed_url.len() - 1];
-            let rtrim_slash = rtrim(trimmed_url_slice, "\\", false);
+                let trimmed_url_slice = slice(trimmed_url, 0..trimmed_url.len() - 1);
+                let rtrim_slash = rtrim(trimmed_url_slice.as_str(), "\\", false);
 
-            if (trimmed_url.len() - rtrim_slash.len()) % 2 == 0 {
-                return None;
+                if (trimmed_url.len() - rtrim_slash.len()) % 2 == 0 {
+                    return None;
+                }
             } else {
                 // find closing parenthesis
                 let last_paren_idx = find_closing_bracket(cap2, "()");
+
                 if last_paren_idx > -1 {
                     let _start = raw.chars().position(|c| c == '!' );
 
                     let start = if _start.is_some() {
-                        if _start.unwrap() == 9 {
+                        if _start.unwrap() == 0 {
                             5 as usize
                         } else {
                             4 as usize
@@ -1233,17 +1253,23 @@ impl ITokenizer for Tokenizer {
                         4 as usize
                     };
 
+
                     let link_len = start + cap1.len() + last_paren_idx as usize;
                     cap2 = &cap2[0..last_paren_idx as usize];
                     raw = &raw[0..link_len].trim();
                     cap3 = "";
                 }
             }
+
+
             let mut _href = cap2;
             let mut _title = "";
             if self.options.pedantic {
                 // split pedantic href and title
-                let link_captures = regx(r#"^([^'"]*[^\s])\s+(['"])(.*)\2"#).captures(_href);
+                let link_captures = fancy_regex::Regex::new(r#"^([^'"]*[^\s])\s+(['"])(.*)\2"#)
+                    .unwrap()
+                    .captures(_href)
+                    .unwrap();
 
                 if link_captures.is_some() {
                     let caps = link_captures.unwrap();
@@ -1291,9 +1317,9 @@ impl ITokenizer for Tokenizer {
                     tag: "".to_string()
                 };
 
-                let token = output_link(caps, link, raw.to_string());
-                return Some(token);
-                // Set inline tokens for token.tokens see output_link (original)
+            let token = output_link(caps, link, raw.to_string());
+            return Some(token);
+            // Set inline tokens for token.tokens see output_link (original)
         }
         None
     }
@@ -1400,164 +1426,148 @@ impl ITokenizer for Tokenizer {
 
     fn em_strong(&mut self, src: &str, masked_src: &str, prev_char: &str) -> Option<Token> {
         let em_strong_caps = self.rules.inline.exec_fc(src, MDInline::EmStrong, Some("l_delim"));
-
         let mut _masked_src: String = String::from(masked_src);
 
-        if em_strong_caps.is_some() {
-            let caps = em_strong_caps.unwrap();
-            let raw = caps.get(0).map_or("", |m| m.as_str());
-            let match1 = caps.get(1).map_or("", |m| m.as_str());
-            let match2 = caps.get(2).map_or("", |m| m.as_str());
-            let match3 = caps.get(3).map_or("", |m| m.as_str());
-            let match4 = caps.get(4).map_or("", |m| m.as_str());
+        if em_strong_caps.is_none() { return None; }
 
-            if regx(r#"[\p{L}\p{N}]"#).is_match(prev_char) &&
-                match3.len() > 0
-            { return None; }
+        let caps = em_strong_caps.unwrap();
+        let raw = caps.get(0).map_or("", |m| m.as_str());
+        let match1 = caps.get(1).map_or("", |m| m.as_str());
+        let match2 = caps.get(2).map_or("", |m| m.as_str());
+        let match3 = caps.get(3).map_or("", |m| m.as_str());
 
-            let next_char = if match1.len() > 0 {
-                match1.clone()
-            } else if match2.len() > 0 {
-                match2.clone()
+
+        if regx(r#"[\p{L}\p{N}]"#).is_match(prev_char) &&
+            match3.len() > 0
+        { return None; }
+
+
+        let next_char = if match1.len() > 0 {
+            match1.clone()
+        } else if match2.len() > 0 {
+            match2.clone()
+        } else {
+            ""
+        };
+
+        let punctuation_caps = self.rules.inline.exec_fc(prev_char, MDInline::Punctuation, None);
+
+        if next_char.is_empty() ||
+            (next_char.len() > 0 &&
+                (prev_char == "" ||
+                    punctuation_caps.is_some()
+                )
+            )
+        {
+
+            let mut r_length: i32 = 0;
+            let l_length: i32 = (raw.len() - 1 ) as i32;
+            let mut mid_delim_total: i32 = 0;
+            let mut r_delim = String::from("");
+            let mut delim_total: i32 = l_length.clone() as i32;
+
+            let end_reg_str = if raw.chars().nth(0).unwrap() == '*' {
+                self.rules.inline.em_strong.r_delim_ast.clone()
             } else {
-                ""
+                self.rules.inline.em_strong.r_delim_und.clone()
             };
 
-            let punctuation_caps = self.rules.inline.exec_fc(src, MDInline::Punctuation, None);
-            if next_char.is_empty() ||
-                (next_char.len() > 0 &&
-                    (prev_char == "" ||
-                        punctuation_caps.is_some()
-                    )
-                )
-            {
-                let mut r_length: usize = 0;
-                let l_length = raw.len() - 1;
-                let mut mid_delim_total: usize = 0;
-                let mut r_delim = String::from("");
-                let mut delim_total = l_length.clone();
+            let src_len = src.chars().count();
+            let masked_len =_masked_src.chars().count();
+            let elems: i32 = (-1 * (src_len as i32)) + (l_length);
+            let start_idx: usize = ((masked_len as i32) + elems) as usize;
 
-                let end_reg = if raw.chars().nth(0).unwrap() == '*' {
-                    self.rules.inline.em_strong.r_delim_ast.clone()
+            _masked_src = if elems >= masked_len as i32 {
+                _masked_src
+            } else {
+                String::from(slice(_masked_src.as_str(), start_idx.._masked_src.chars().count()))
+            };
+
+            let end_re = fancy_regex::Regex::new(end_reg_str.as_str()).unwrap();
+
+            for captures_res in end_re.captures_iter(_masked_src.as_str())
+            {
+                if captures_res.is_err() { break; }
+
+                let end_caps = captures_res.unwrap();
+                let raw_match = end_caps.get(0).unwrap();
+
+                let _match1 = end_caps.get(1).map_or("", |m| m.as_str());
+                let _match2 = end_caps.get(2).map_or("", |m| m.as_str());
+                let _match3 = end_caps.get(3).map_or("", |m| m.as_str());
+                let _match4 = end_caps.get(4).map_or("", |m| m.as_str());
+                let _match5 = end_caps.get(5).map_or("", |m| m.as_str());
+                let _match6 = end_caps.get(6).map_or("", |m| m.as_str());
+
+
+                r_delim = if !_match1.is_empty() {
+                    _match1.to_string()
+                } else if !_match2.is_empty() {
+                    _match2.to_string()
+                } else if !_match3.is_empty() {
+                    _match3.to_string()
+                } else if !_match4.is_empty() {
+                    _match4.to_string()
+                } else if !_match5.is_empty() {
+                    _match5.to_string()
+                } else if !_match6.is_empty(){
+                    _match6.to_string()
                 } else {
-                    self.rules.inline.em_strong.r_delim_und.clone()
+                    "".to_string()
                 };
 
-                let elems: i32 = -1 * (src.len() as i32) + (l_length as i32);
-                let start_idx: usize = ((_masked_src.len() as i32) + elems) as usize;
+                // skip single * in __abc*abc__
+                if r_delim.is_empty() {
+                    continue;
+                }
 
-                _masked_src = String::from(&_masked_src[start_idx.._masked_src.len()]);
 
-                loop {
-                    let match_caps = fancy_regex::Regex::new(end_reg.as_str())
-                        .unwrap()
-                        .captures(_masked_src.as_str())
-                        .unwrap();
+                r_length = r_delim.len() as i32;
 
-                    if match_caps.is_none() { break; }
 
-                    let _caps = match_caps.unwrap();
-                    let _match1 = _caps.get(1).map_or("", |m| m.as_str());
-                    let _match2 = _caps.get(2).map_or("", |m| m.as_str());
-                    let _match3 = _caps.get(3).map_or("", |m| m.as_str());
-                    let _match4 = _caps.get(4).map_or("", |m| m.as_str());
-                    let _match5 = _caps.get(5).map_or("", |m| m.as_str());
-                    let _match6 = _caps.get(6).map_or("", |m| m.as_str());
-
-                    r_delim = if !_match1.is_empty() {
-                        _match1.to_string()
-                    } else if !_match2.is_empty() {
-                        _match2.to_string()
-                    } else if !_match3.is_empty() {
-                        _match3.to_string()
-                    } else if !_match4.is_empty() {
-                        _match4.to_string()
-                    } else if !_match5.is_empty() {
-                        _match5.to_string()
-                    } else if !_match6.is_empty(){
-                        _match6.to_string()
-                    } else {
-                        "".to_string()
-                    };
-
-                    // skip single * in __abc*abc__
-                    if r_delim.is_empty() { continue; }
-                    r_length = r_delim.len();
-
-                    // found another Left Delim
-                    if _match3.len() > 0 ||
-                        _match4.len() > 0
+                // found another Left Delim
+                if _match3.len() > 0 ||
+                    _match4.len() > 0
+                {
+                    delim_total += r_length;
+                    continue;
+                } else if _match5.len() > 0 || // either Left or Right Delim
+                    _match6.len() > 0
+                {
+                    if is_not_divisible(l_length , 3) &&
+                        is_divisible(l_length + r_length, 3)
                     {
-                        delim_total += r_length;
-                        continue;
-                    } else if _match5.len() > 0 || // either Left or Right Delim
-                        _match6.len() > 0
-                    {
-                        if (l_length % 3) > 0 &&
-                            !(((l_length + r_length) % 3) > 0)
-                        {
-                            mid_delim_total += r_length;
-                            continue; // CommonMark Emphasis Rules 9-10
-                        }
+                        mid_delim_total += r_length;
+                        continue; // CommonMark Emphasis Rules 9-10
                     }
+                }
 
-                    delim_total -= r_length;
-                    if delim_total > 0 { continue; } // Haven't found enough closing delimiters
 
-                    // Remove extra characters. *a*** -> *a*
-                    r_length = (min(r_length, r_length + delim_total + mid_delim_total)).clone();
+                delim_total -= r_length;
+                if delim_total > 0 {
+                    continue;
+                } // Haven't found enough closing delimiters
 
-                    let _raw_match = _caps.get(0).unwrap();
-                    // Create `em` if smallest delimiter has odd char count. *a***
-                    if ((min(l_length, r_length)) % 2) > 0
-                    {
-                        let text_end_idx = l_length + _raw_match.start() + r_length;
-                        let raw_end_idx = l_length + _raw_match.start() + r_length + 1;
+                // Remove extra characters. *a*** -> *a*
+                r_length = (min(r_length, r_length + delim_total + mid_delim_total)).clone();
 
-                        let text = String::from(&src[1..text_end_idx]);
-                        let raw = String::from(&src[0..raw_end_idx]);
+                // Create `em` if smallest delimiter has odd char count. *a***
+                if is_odd(min(l_length, r_length))
+                {
 
-                        return Some(Token {
-                            _type: "em",
-                            raw: raw.to_string(),
-                            href: "".to_string(),
-                            title: "".to_string(),
-                            text,
-                            tokens: vec![],
-                            tag: "".to_string(),
-                            ordered: false,
-                            start: 0,
-                            lang: "".to_string(),
-                            loose: false,
-                            items: vec![],
-                            depth: 0,
-                            escaped: false,
-                            pre: false,
-                            task: false,
-                            checked: false,
-                            in_link: false,
-                            in_raw_block: false,
-                            links: vec![],
-                            align: vec![],
-                            rows: vec![],
-                            header: vec![],
-                            code_block_style: "".to_string()
-                        });
-                    }
+                    let text_end_idx = (l_length + (raw_match.start() as i32) + r_length) as usize;
+                    let raw_end_idx = (l_length + (raw_match.start() as i32) + r_length + 1) as usize;
 
-                    // Create 'strong' if smallest delimiter has even char count. **a***
-                    let text_end_idx = l_length + _raw_match.start() + r_length - 1;
-                    let raw_end_idx = l_length + _raw_match.start() + r_length + 1;
 
-                    let text = String::from(&src[2..text_end_idx]);
-                    let raw = String::from(&src[0..raw_end_idx]);
+                    let text = slice(src, 1..text_end_idx);
+                    let raw = slice(src, 0..raw_end_idx);
 
                     return Some(Token {
-                        _type: "strong",
+                        _type: "em",
                         raw: raw.to_string(),
                         href: "".to_string(),
                         title: "".to_string(),
-                        text,
+                        text: text.to_string(),
                         tokens: vec![],
                         tag: "".to_string(),
                         ordered: false,
@@ -1579,7 +1589,43 @@ impl ITokenizer for Tokenizer {
                         code_block_style: "".to_string()
                     });
                 }
+
+                // Create 'strong' if smallest delimiter has even char count. **a***
+                let text_end_idx = (l_length + (raw_match.start() as i32) + r_length - 1) as usize;
+                let raw_end_idx = (l_length + (raw_match.start() as i32) + r_length + 1) as usize;
+
+                let text = slice(src, 2..text_end_idx);
+                let raw = slice(src, 0..raw_end_idx);
+
+
+                return Some(Token {
+                    _type: "strong",
+                    raw: raw.to_string(),
+                    href: "".to_string(),
+                    title: "".to_string(),
+                    text: text.to_string(),
+                    tokens: vec![],
+                    tag: "".to_string(),
+                    ordered: false,
+                    start: 0,
+                    lang: "".to_string(),
+                    loose: false,
+                    items: vec![],
+                    depth: 0,
+                    escaped: false,
+                    pre: false,
+                    task: false,
+                    checked: false,
+                    in_link: false,
+                    in_raw_block: false,
+                    links: vec![],
+                    align: vec![],
+                    rows: vec![],
+                    header: vec![],
+                    code_block_style: "".to_string()
+                });
             }
+            // println!("====================================================================================");
         }
         None
     }
@@ -1599,7 +1645,7 @@ impl ITokenizer for Tokenizer {
             if has_non_space_chars &&
                 has_space_chars_on_both_ends
             {
-                text = String::from(&text[1..text.len() - 1]);
+                text = slice(text.as_str(), 1..text.len() - 1);
             }
 
             text = escape(text.as_str(), true);
@@ -1674,20 +1720,16 @@ impl ITokenizer for Tokenizer {
     }
 
     fn del(&mut self, src: &str) -> Option<Token> {
+        if self.rules.inline.del.is_empty() { return None; }
+
         let del_caps = self.rules.inline.exec_fc(src, MDInline::Del, None);
 
         if del_caps.is_some() &&
             self.rules.inline.del != ""
         {
-            // TODO: pass in lexer as arg instead
-            let mut lexer = Lexer::new(self.options);
             let caps = del_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
             let caps_2 = caps.get(2).map_or("", |m| m.as_str());
-
-            // TODO: Put this in caller =================================
-            let mut tokens = vec![];
-            lexer.inline_tokens(caps_2, &mut tokens);
 
             let token = Token {
                 _type: "del",
@@ -1803,12 +1845,23 @@ impl ITokenizer for Tokenizer {
     }
 
     fn url(&mut self, src: &str, mangle: fn(text: &str) -> String) -> Option<Token> {
-        let url_caps = self.rules.inline.exec_fc(src, MDInline::Url, None);
+        if  self.rules.inline.url.is_empty() { return None; }
+
+        // let url_caps = self.rules.inline.exec_fc(src, MDInline::Url, None);
+
+        let url_re_str =  self.rules.inline.url.as_str();
+        let url_re = regress::Regex::with_flags(url_re_str, "i").unwrap();
+        let url_caps = url_re.find(src);
+
         if url_caps.is_some() {
             let caps = url_caps.unwrap();
-            let mut raw = caps.get(0).map_or("", |m| m.as_str());
-            let cap1 = caps.get(1).map_or("", |m| m.as_str());
-            let cap2 = caps.get(2).map_or("", |m| m.as_str());
+            // let mut raw = caps.get(0).map_or("", |m| m.as_str());
+            // let cap1 = caps.get(1).map_or("", |m| m.as_str());
+            // let cap2 = caps.get(2).map_or("", |m| m.as_str());
+
+            let mut raw = caps.group(0).map_or("", |r| { &src[r] });
+            let cap1 = caps.group(1).map_or("", |r| { &src[r] });
+            let cap2 = caps.group(2).map_or("", |r| { &src[r] });
 
             let mut text = String::from("");
             let mut href = String::from("");
@@ -1929,6 +1982,7 @@ impl ITokenizer for Tokenizer {
                 text = escape(html.as_str(), false);
             }
 
+
             let token =
                 Token {
                 _type: "text",
@@ -1946,16 +2000,17 @@ impl ITokenizer for Tokenizer {
                 depth: 0,
                 escaped: false,
                 pre: false,
-                    task: false,
-                    checked: false,
-                    in_link: false,
-                    in_raw_block,
-                    links: vec![],
+                task: false,
+                checked: false,
+                in_link: false,
+                in_raw_block,
+                links: vec![],
                 align: vec![],
                 rows: vec![],
                 header: vec![],
                 code_block_style: "".to_string()
             };
+
             return Some(token);
         }
         None
@@ -1965,7 +2020,7 @@ impl ITokenizer for Tokenizer {
 pub fn output_link(caps: Captures, link: Link, raw: String) -> Token {
 
     let cap0 = caps.get(0).map_or("", |m| m.as_str());
-    let cap1=  caps.get(1).map_or("", |m| m.as_str());
+    let cap1 =  caps.get(1).map_or("", |m| m.as_str());
 
     let href = link.href.to_string();
     let title = if link.title.len() > 0 {
@@ -2059,7 +2114,7 @@ pub fn indent_code_compensation(raw: &str, text: String) -> String {
             let indent_in_node = match_indent_in_node.get(0).map_or("", |m| <&str>::from(m));
 
             if indent_in_node.len() >= indent_to_code.len() {
-                return String::from(&node[indent_to_code.len()..]);
+                return slice(node, indent_to_code.len()..node.len());
             }
 
             return node.to_string();
@@ -2068,10 +2123,21 @@ pub fn indent_code_compensation(raw: &str, text: String) -> String {
         .join("\n");
 }
 
-pub fn slice(s: &str, range: Range<usize>) -> &str {
+pub fn slice(s: &str, range: Range<usize>) -> String {
     if s.len() > range.start && s.len() >= range.end {
-        &s[range]
+        s.chars().take(range.end).skip(range.start).collect()
     } else {
-        ""
+        "".to_string()
     }
 }
+
+fn slice_from_end(s: &str, n: usize) -> String {
+    let slice_rev = s.char_indices().rev().nth(n).map(|(i, _)| &s[i..]);
+    if slice_rev.is_some() {
+        String::from(slice_rev.unwrap())
+    } else {
+        String::from(s)
+    }
+}
+
+

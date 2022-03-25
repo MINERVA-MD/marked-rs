@@ -239,6 +239,9 @@ impl ITokenizer for Tokenizer {
     }
 
     fn fences(&mut self, src: &str) -> Option<Token> {
+
+        if  self.rules.block.fences.is_empty()  { return None; }
+
         let fences_caps = self.rules.block.exec_fc(src, MDBlock::Fences, None);
 
         if fences_caps.is_some() {
@@ -1157,9 +1160,9 @@ impl ITokenizer for Tokenizer {
                 *in_link = false;
             }
 
-            if !*in_raw_block && regx(r#"(?i)^<(pre|code|kbd|script)(\s|>)"#).is_match(raw) {
+            if !*in_raw_block && fancy_regex::Regex::new(r#"(?i)^<(pre|code|kbd|script)(\s|>)"#).unwrap().is_match(raw).unwrap() {
                 *in_raw_block = true;
-            } else if *in_raw_block && regx(r#"(?i)^<\/(pre|code|kbd|script)(\s|>)"#).is_match(raw) {
+            } else if *in_raw_block && fancy_regex::Regex::new(r#"(?i)^<\/(pre|code|kbd|script)(\s|>)"#).unwrap().is_match(raw).unwrap() {
                 *in_raw_block = false;
             }
 
@@ -1236,11 +1239,12 @@ impl ITokenizer for Tokenizer {
             } else {
                 // find closing parenthesis
                 let last_paren_idx = find_closing_bracket(cap2, "()");
+
                 if last_paren_idx > -1 {
                     let _start = raw.chars().position(|c| c == '!' );
 
                     let start = if _start.is_some() {
-                        if _start.unwrap() == 9 {
+                        if _start.unwrap() == 0 {
                             5 as usize
                         } else {
                             4 as usize
@@ -1248,6 +1252,7 @@ impl ITokenizer for Tokenizer {
                     } else {
                         4 as usize
                     };
+
 
                     let link_len = start + cap1.len() + last_paren_idx as usize;
                     cap2 = &cap2[0..last_paren_idx as usize];
@@ -1261,7 +1266,10 @@ impl ITokenizer for Tokenizer {
             let mut _title = "";
             if self.options.pedantic {
                 // split pedantic href and title
-                let link_captures = regx(r#"^([^'"]*[^\s])\s+(['"])(.*)\2"#).captures(_href);
+                let link_captures = fancy_regex::Regex::new(r#"^([^'"]*[^\s])\s+(['"])(.*)\2"#)
+                    .unwrap()
+                    .captures(_href)
+                    .unwrap();
 
                 if link_captures.is_some() {
                     let caps = link_captures.unwrap();
@@ -1309,9 +1317,9 @@ impl ITokenizer for Tokenizer {
                     tag: "".to_string()
                 };
 
-                let token = output_link(caps, link, raw.to_string());
-                return Some(token);
-                // Set inline tokens for token.tokens see output_link (original)
+            let token = output_link(caps, link, raw.to_string());
+            return Some(token);
+            // Set inline tokens for token.tokens see output_link (original)
         }
         None
     }
@@ -1428,10 +1436,10 @@ impl ITokenizer for Tokenizer {
         let match2 = caps.get(2).map_or("", |m| m.as_str());
         let match3 = caps.get(3).map_or("", |m| m.as_str());
 
+
         if regx(r#"[\p{L}\p{N}]"#).is_match(prev_char) &&
             match3.len() > 0
         { return None; }
-
 
 
         let next_char = if match1.len() > 0 {
@@ -1441,7 +1449,6 @@ impl ITokenizer for Tokenizer {
         } else {
             ""
         };
-
 
         let punctuation_caps = self.rules.inline.exec_fc(prev_char, MDInline::Punctuation, None);
 
@@ -1465,10 +1472,17 @@ impl ITokenizer for Tokenizer {
                 self.rules.inline.em_strong.r_delim_und.clone()
             };
 
-            let elems: i32 = -1 * (src.len() as i32) + (l_length);
-            let start_idx: usize = ((_masked_src.len() as i32) + elems) as usize;
+            let src_len = src.chars().count();
+            let masked_len =_masked_src.chars().count();
+            let elems: i32 = (-1 * (src_len as i32)) + (l_length);
+            let start_idx: usize = ((masked_len as i32) + elems) as usize;
 
-            _masked_src = String::from(slice(_masked_src.as_str(), start_idx.._masked_src.len()));
+            _masked_src = if elems >= masked_len as i32 {
+                _masked_src
+            } else {
+                String::from(slice(_masked_src.as_str(), start_idx.._masked_src.chars().count()))
+            };
+
             let end_re = fancy_regex::Regex::new(end_reg_str.as_str()).unwrap();
 
             for captures_res in end_re.captures_iter(_masked_src.as_str())
@@ -1544,6 +1558,7 @@ impl ITokenizer for Tokenizer {
                     let text_end_idx = (l_length + (raw_match.start() as i32) + r_length) as usize;
                     let raw_end_idx = (l_length + (raw_match.start() as i32) + r_length + 1) as usize;
 
+
                     let text = slice(src, 1..text_end_idx);
                     let raw = slice(src, 0..raw_end_idx);
 
@@ -1610,6 +1625,7 @@ impl ITokenizer for Tokenizer {
                     code_block_style: "".to_string()
                 });
             }
+            // println!("====================================================================================");
         }
         None
     }
@@ -1831,12 +1847,21 @@ impl ITokenizer for Tokenizer {
     fn url(&mut self, src: &str, mangle: fn(text: &str) -> String) -> Option<Token> {
         if  self.rules.inline.url.is_empty() { return None; }
 
-        let url_caps = self.rules.inline.exec_fc(src, MDInline::Url, None);
+        // let url_caps = self.rules.inline.exec_fc(src, MDInline::Url, None);
+
+        let url_re_str =  self.rules.inline.url.as_str();
+        let url_re = regress::Regex::with_flags(url_re_str, "i").unwrap();
+        let url_caps = url_re.find(src);
+
         if url_caps.is_some() {
             let caps = url_caps.unwrap();
-            let mut raw = caps.get(0).map_or("", |m| m.as_str());
-            let cap1 = caps.get(1).map_or("", |m| m.as_str());
-            let cap2 = caps.get(2).map_or("", |m| m.as_str());
+            // let mut raw = caps.get(0).map_or("", |m| m.as_str());
+            // let cap1 = caps.get(1).map_or("", |m| m.as_str());
+            // let cap2 = caps.get(2).map_or("", |m| m.as_str());
+
+            let mut raw = caps.group(0).map_or("", |r| { &src[r] });
+            let cap1 = caps.group(1).map_or("", |r| { &src[r] });
+            let cap2 = caps.group(2).map_or("", |r| { &src[r] });
 
             let mut text = String::from("");
             let mut href = String::from("");
@@ -1957,6 +1982,7 @@ impl ITokenizer for Tokenizer {
                 text = escape(html.as_str(), false);
             }
 
+
             let token =
                 Token {
                 _type: "text",
@@ -1994,7 +2020,7 @@ impl ITokenizer for Tokenizer {
 pub fn output_link(caps: Captures, link: Link, raw: String) -> Token {
 
     let cap0 = caps.get(0).map_or("", |m| m.as_str());
-    let cap1=  caps.get(1).map_or("", |m| m.as_str());
+    let cap1 =  caps.get(1).map_or("", |m| m.as_str());
 
     let href = link.href.to_string();
     let title = if link.title.len() > 0 {
@@ -2102,6 +2128,15 @@ pub fn slice(s: &str, range: Range<usize>) -> String {
         s.chars().take(range.end).skip(range.start).collect()
     } else {
         "".to_string()
+    }
+}
+
+fn slice_from_end(s: &str, n: usize) -> String {
+    let slice_rev = s.char_indices().rev().nth(n).map(|(i, _)| &s[i..]);
+    if slice_rev.is_some() {
+        String::from(slice_rev.unwrap())
+    } else {
+        String::from(s)
     }
 }
 

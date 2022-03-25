@@ -1,6 +1,6 @@
-use std::cell::RefCell;
+#![allow(warnings, unused)]
 use std::rc::Rc;
-use crate::rules::Rules;
+use std::cell::RefCell;
 use crate::tokenizer::Token;
 
 pub type Callback = fn(token: &mut Rc<RefCell<Token>>);
@@ -73,7 +73,7 @@ impl Options {
         }
     }
 
-    pub fn highlight(&mut self, code: &str, lang: &str) -> String {
+    pub fn highlight(&mut self, _code: &str, _lang: &str) -> String {
         "".to_string()
     }
 
@@ -109,6 +109,64 @@ pub fn get_default_options() -> Options {
         tokenizer: None,
         walk_tokens: None,
         xhtml: false
+    }
+}
+
+pub fn get_base_options(gfm: bool, pedantic: bool, header_ids: bool, sanitize: bool) -> Options {
+    Options {
+        base_url: "",
+        breaks: false,
+        extensions: None,
+        gfm,
+        header_ids,
+        header_prefix: "",
+        lang_prefix: "language-",
+        mangle: true,
+        pedantic,
+        sanitize,
+        sanitizer: None,
+        silent: false,
+        smart_lists: false,
+        smartypants: false,
+        is_highlight: false,
+        tokenizer: None,
+        walk_tokens: None,
+        xhtml: false
+    }
+}
+
+
+pub fn get_options(
+    gfm: bool,
+    pedantic: bool,
+    header_ids: bool,
+    sanitize: bool,
+    breaks: bool,
+    mangle: bool,
+    silent: bool,
+    smart_lists: bool,
+    smartypants: bool,
+    xhtml: bool
+) -> Options {
+    Options {
+        base_url: "",
+        breaks,
+        extensions: None,
+        gfm,
+        header_ids,
+        header_prefix: "",
+        lang_prefix: "language-",
+        mangle,
+        pedantic,
+        sanitize,
+        sanitizer: None,
+        silent,
+        smart_lists,
+        smartypants,
+        is_highlight: false,
+        tokenizer: None,
+        walk_tokens: None,
+        xhtml
     }
 }
 
