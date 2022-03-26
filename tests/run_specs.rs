@@ -212,7 +212,7 @@ mod specs {
     use super::*;
 
 
-    #[test]
+    #[ignore]
     fn run_base_specs() {
         let mut options = get_base_options(false, false, false, false);
         run_specs("CommonMark", "tests/fixtures/marked-specs/commonmark", true, options);
@@ -221,7 +221,7 @@ mod specs {
         run_specs("GFM", "tests/fixtures/marked-specs/gfm", true, options);
     }
 
-    #[test]
+    #[ignore]
     #[timeout(800000)]
     fn run_og_new_specs() {
         run_md_specs("Original", "tests/fixtures/marked-specs/original/json", true);

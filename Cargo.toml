@@ -11,6 +11,11 @@ crate-type = ["lib", "cdylib"]
 
 [features]
 default = ["console_error_panic_hook", "wee_alloc"]
+profile-with-puffin = ["profiling/profile-with-puffin"]
+profile-with-optick = ["profiling/profile-with-optick"]
+profile-with-superluminal = ["profiling/profile-with-superluminal"]
+profile-with-tracing = ["profiling/profile-with-tracing"]
+profile-with-tracy = ["profiling/profile-with-tracy"]
 
 [dev-dependencies]
 criterion = "0.3"
@@ -35,6 +40,7 @@ kuchiki = "0.8.1"
 seq-macro = "0.3"
 scraper = "0.12.0"
 gnuplot = "0.0.37"
+profiling = "1.0.5"
 test-case = "1.2.1"
 urlencoded = "0.6.0"
 derivative = "2.2.0"

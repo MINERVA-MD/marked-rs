@@ -33,6 +33,7 @@ pub struct InlineToken {
 }
 
 pub trait ILexer {
+    fn lexify(&mut self, src: &str);
     fn lex_ac<'a>(&mut self, src: &str) -> Vec<token::Token>;
     fn lex<'a>(&mut self, src: &str) -> &mut Vec<Rc<RefCell<Token>>>;
     fn inline(&mut self, src: &str, token: Rc<RefCell<Token>>);
@@ -277,6 +278,25 @@ impl Lexer {
 }
 
 impl ILexer for Lexer {
+
+    fn lexify(&mut self, src: &str) {
+        let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
+        new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
+
+        let mut tokens = vec![];
+        self.block_tokens(new_src.as_str(), &mut tokens);
+
+
+        while self.inline_queue.len() > 0 {
+            let next = self.inline_queue.remove(0);
+            let i_tokens = &mut next.token.as_ref().borrow_mut().tokens;
+            self.inline_tokens(next.src.as_str(), i_tokens);
+        }
+
+        // println!("Tokens: {:#?}", tokens);
+
+        self.tokens.append(&mut tokens);
+    }
 
     fn lex<'a>(&mut self, src: &str) -> &mut Vec<Rc<RefCell<Token>>> {
         let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
@@ -1200,6 +1220,7 @@ impl ILexer for Lexer {
             true
         }
     }
+
 
 }
 

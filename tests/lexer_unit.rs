@@ -10702,7 +10702,7 @@ paragraph
         expect_tokens(md, options, &mut tokens, links);
     }
 
-    #[test]
+    #[ignore]
     #[timeout(80000)]
     fn check_md_file() {
         let mut marked = Marked::new(None);
