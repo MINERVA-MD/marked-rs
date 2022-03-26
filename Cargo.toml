@@ -38,6 +38,7 @@ chrono = "0.4.19"
 regress = "0.4.1"
 kuchiki = "0.8.1"
 seq-macro = "0.3"
+comrak = "0.12.1"
 scraper = "0.12.0"
 gnuplot = "0.0.37"
 profiling = "1.0.5"
@@ -54,8 +55,10 @@ html-escape = "0.2.11"
 wasm-bindgen = "0.2.79"
 pretty_assertions = "1.1.0"
 unicode-segmentation = "1.9.0"
+
 getrandom = { version = "0.2", features = ["js"] }
 serde = { version = "1.0.136", features = ["derive"] }
+pulldown-cmark = { version = "0.9.1", default-features = false }
 
 
 # The `console_error_panic_hook` crate provides better debugging of panics by

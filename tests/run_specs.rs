@@ -221,8 +221,8 @@ mod specs {
         run_specs("GFM", "tests/fixtures/marked-specs/gfm", true, options);
     }
 
-    #[ignore]
-    #[timeout(800000)]
+    #[test]
+    #[timeout(600000)]
     fn run_og_new_specs() {
         run_md_specs("Original", "tests/fixtures/marked-specs/original/json", true);
         run_md_specs("New", "tests/fixtures/marked-specs/new/json", true);
