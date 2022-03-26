@@ -213,18 +213,26 @@ mod specs {
 
 
     #[ignore]
-    fn run_base_specs() {
-        let mut options = get_base_options(false, false, false, false);
+    fn run_cm_specs() {
+        let options = get_base_options(false, false, false, false);
         run_specs("CommonMark", "tests/fixtures/marked-specs/commonmark", true, options);
+    }
 
-        options = get_base_options(true, false, false, false);
+    #[test]
+    fn run_gfm_specs() {
+        let options = get_base_options(true, false, false, false);
         run_specs("GFM", "tests/fixtures/marked-specs/gfm", true, options);
+    }
+
+    #[ignore]
+    #[timeout(600000)]
+    fn run_og_specs() {
+        run_md_specs("Original", "tests/fixtures/marked-specs/original/json", true);
     }
 
     #[test]
     #[timeout(600000)]
-    fn run_og_new_specs() {
-        run_md_specs("Original", "tests/fixtures/marked-specs/original/json", true);
+    fn run_new_specs() {
         run_md_specs("New", "tests/fixtures/marked-specs/new/json", true);
     }
 
