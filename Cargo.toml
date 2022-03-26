@@ -24,9 +24,15 @@ criterion = "0.3"
 name = "my_benchmark"
 harness = false
 
+[profile.dev]
+lto = "fat"
+opt-level = 2
+codegen-units = 1
+
 [profile.release]
 lto = "fat"
 opt-level = 3
+panic = "abort"
 codegen-units = 1
 
 [dependencies]

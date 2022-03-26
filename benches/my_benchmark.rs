@@ -1,4 +1,5 @@
 use std::fs;
+use std::mem::size_of_val;
 use marked_rs::marked::Marked;
 use marked_rs::lexer::{ILexer, Lexer};
 use pulldown_cmark::{Parser, Options, html};
@@ -14,6 +15,9 @@ fn bench(c: &mut Criterion) {
     let md = fs::read_to_string("tests/fixtures/md/spec.md").expect("Unable to read file");
     let md_sm = fs::read_to_string("tests/fixtures/md/spec-2.md").expect("Unable to read file");
 
+
+    let tokens = lexer.lex(md_sm.as_str());
+    println!("Tokens: {} | Size: {}MB", tokens.len(), size_of_val(&*tokens));
 
 
     // c.bench_function("Pulldown Cmark", |b| b.iter(|| html::push_html(black_box(&mut String::new()), black_box(Parser::new_ext(md.as_str(), Options::empty())))));

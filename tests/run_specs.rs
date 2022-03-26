@@ -236,8 +236,4 @@ mod specs {
         run_md_specs("New", "tests/fixtures/marked-specs/new/json", true);
     }
 
-    fn output_completion_table() {
-
-    }
-
 }
