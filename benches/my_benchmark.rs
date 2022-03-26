@@ -16,7 +16,7 @@ fn bench(c: &mut Criterion) {
     let md_sm = fs::read_to_string("tests/fixtures/md/spec-2.md").expect("Unable to read file");
 
 
-    let tokens = lexer.lex_ac(md.as_str());
+    let tokens = lexer.lex_ac(md_sm.as_str());
     let tokens_memory_usage = size_of_val(&*tokens) as f64 / 1000000_f64;
 
     println!("Tokens: {} | Size: {} MB", tokens.len(), tokens_memory_usage);
