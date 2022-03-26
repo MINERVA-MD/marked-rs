@@ -44,4 +44,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --release -- --nocapture
+          args: --test lexer_unit --release -- --test-threads=1 --nocapture
