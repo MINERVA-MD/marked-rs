@@ -25,8 +25,9 @@ name = "my_benchmark"
 harness = false
 
 [profile.release]
-lto = true
+lto = "fat"
 opt-level = 3
+codegen-units = 1
 
 [dependencies]
 url = "2.2.2"
