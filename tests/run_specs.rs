@@ -175,7 +175,7 @@ fn html_entity_compare(str1: String, str2: String) -> bool {
 }
 
 fn write_table(path: &str, table: String) {
-    fs::create_dir_all("tests/specs")?;
+    fs::create_dir_all("tests/specs").expect("Unable to create specs dir");
 
     let mut file = OpenOptions::new()
         .create_new(true)
