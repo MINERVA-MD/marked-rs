@@ -170,15 +170,13 @@ fn html_entity_compare(str1: String, str2: String) -> bool {
     html_escape::decode_html_entities_to_string(str1, &mut str1_decoded);
     html_escape::decode_html_entities_to_string(str2, &mut str2_decoded);
 
-    // if str1_decoded != str2_decoded {
-    //     println!("{:#?}\n\n\n\n\n{:#?}", str1_decoded, str2_decoded)
-    // }
-
     pretty_assertions::assert_eq!(str1_decoded, str2_decoded);
     str1_decoded == str2_decoded
 }
 
 fn write_table(path: &str, table: String) {
+    fs::create_dir_all("tests/specs")?;
+
     let mut file = OpenOptions::new()
         .create_new(true)
         .write(true)
