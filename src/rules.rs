@@ -215,8 +215,6 @@ fn get_global_block_rules() -> BlockRegex<fancy_regex::Regex> {
         pedantic_block
     ) = get_block_rules();
 
-    println!("Fences Reg:{}", pedantic_block.fences);
-
     BlockRegex {
         normal: BlockRegexGroup {
             newline: build_regex(normal_block.newline),
