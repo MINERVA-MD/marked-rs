@@ -5,11 +5,13 @@ use std::{fmt};
 use std::ops::Range;
 use std::cell::RefCell;
 use fancy_regex::Captures;
+use lazy_static::lazy_static;
 
 use crate::defaults::Options;
 use crate::lexer::{InlineToken, Lexer, regx};
-use crate::rules::{get_rules, MDBlock, MDInline, Rules};
+use crate::rules::{exec_block, exec_block_regress, exec_inline, get_inline, get_rules, MDBlock, MDInline, Rules};
 use crate::helpers::{escape, find_closing_bracket, is_divisible, is_not_divisible, is_odd, rtrim, split_cells};
+use crate::regex::{RegexHelper, RegexHelperFc, regx_helper, regx_helper_fc};
 
 
 #[derive(Clone, PartialEq, Debug)]
@@ -95,11 +97,11 @@ impl fmt::Display for Token {
         \n\tStart: {:?} \n\tLang: {:?} \n\tLoose: {:?} \n\tItems: {:?} \
         \n\tDepth: {:?} \n\tEscaped: {:?} \n\tPre: {:?} \n\tHeader: {:?} \
         \n\tCode Style: {:?}\n",
-            self._type, self.raw, self.href, self.title,
-            self.text, self.tokens, self.tag, self.ordered,
-            self.start, self.lang, self.loose, self.items,
-            self.depth, self.escaped, self.pre, self.header,
-            self.code_block_style
+               self._type, self.raw, self.href, self.title,
+               self.text, self.tokens, self.tag, self.ordered,
+               self.start, self.lang, self.loose, self.items,
+               self.depth, self.escaped, self.pre, self.header,
+               self.code_block_style
         )
     }
 }
@@ -160,7 +162,8 @@ impl ITokenizer for Tokenizer {
 
     //  Block
     fn space(&mut self, src: &str) -> Option<Token> {
-        let newline_caps = self.rules.block.exec_fc(src, MDBlock::Newline, None);
+
+        let newline_caps = exec_block(src, MDBlock::Newline, &self.options, "");
 
         if newline_caps.is_some() {
             let caps = newline_caps.unwrap();
@@ -199,14 +202,19 @@ impl ITokenizer for Tokenizer {
     }
 
     fn code(&mut self, src: &str) -> Option<Token> {
-        let code_caps = self.rules.block.exec_fc(src, MDBlock::Code, None);
+
+        let code_caps = exec_block(src, MDBlock::Code, &self.options, "");
 
         if code_caps.is_some() {
             let caps = code_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
-            let mut text = regx("(?m)^ {1,4}").replace_all(raw, "").to_string();
+            let mut text = regx_helper(RegexHelper::CodeText).replace_all(raw, "").to_string();
             // todo!("Double check reg");
-            text = if !self.options.pedantic { regx("\n*$").replace_all(text.as_str(), "").to_string()} else { text.to_string() };
+            text = if !self.options.pedantic {
+                regx_helper(RegexHelper::LineDown).replace_all(text.as_str(), "").to_string()
+            } else {
+                text
+            };
 
             return Some(Token {
                 _type: "code",
@@ -240,9 +248,9 @@ impl ITokenizer for Tokenizer {
 
     fn fences(&mut self, src: &str) -> Option<Token> {
 
-        if  self.rules.block.fences.is_empty()  { return None; }
+        // if  self.rules.block.fences.is_empty()  { return None; }
 
-        let fences_caps = self.rules.block.exec_fc(src, MDBlock::Fences, None);
+        let fences_caps = exec_block(src, MDBlock::Fences, &self.options, "");
 
         if fences_caps.is_some() {
             let caps = fences_caps.unwrap();
@@ -288,18 +296,19 @@ impl ITokenizer for Tokenizer {
     }
 
     fn heading(&mut self, src: &str) -> Option<Token> {
-        let heading_caps = self.rules.block.exec_fc(src, MDBlock::Heading, None);
+
+        let heading_caps = exec_block(src, MDBlock::Heading, &self.options, "");
 
         if heading_caps.is_some() {
             let caps = heading_caps.unwrap();
             let mut text = caps.get(2).map_or("", |m| m.as_str()).trim().to_string();
 
-            if regx("#$").is_match(text.as_str()) {
+            if regx_helper(RegexHelper::EndWithHashTag).is_match(text.as_str()) {
                 let trimmed = rtrim(text.as_str(), "#", false);
 
                 if self.options.pedantic {
                     text = trimmed.trim().to_string();
-                } else if trimmed == "" || regx(" $").is_match(trimmed.as_str()) {
+                } else if trimmed == "" || regx_helper(RegexHelper::EndWIthSpace).is_match(trimmed.as_str()) {
                     text = trimmed.trim().to_string();
                 }
             }
@@ -307,7 +316,7 @@ impl ITokenizer for Tokenizer {
             let _raw = caps.get(0).map_or("", |m| m.as_str());
             let depth = caps.get(1).map_or("", |m| m.as_str()).len();
 
-            let mut token = Token {
+            let token = Token {
                 _type: "heading",
                 raw: _raw.to_string(),
                 href: "".to_string(),
@@ -336,13 +345,14 @@ impl ITokenizer for Tokenizer {
 
             // self.lexer.inline(token.text, token.tokens);
             // May need to switch this to reference same token
-            return Some(token.clone());
+            return Some(token);
         }
         None
     }
 
     fn hr(&mut self, src: &str) -> Option<Token> {
-        let hr_caps = self.rules.block.exec_fc(src, MDBlock::Hr, None);
+
+        let hr_caps = exec_block(src, MDBlock::Hr, &self.options, "");
 
         if hr_caps.is_some() {
             let caps = hr_caps.unwrap();
@@ -379,12 +389,13 @@ impl ITokenizer for Tokenizer {
     }
 
     fn blockquote(&mut self, src: &str) -> Option<Token> {
-        let blockquote_caps = self.rules.block.exec_fc(src, MDBlock::Blockquote, None);
+
+        let blockquote_caps = exec_block(src, MDBlock::Blockquote, &self.options, "");
 
         if blockquote_caps.is_some() {
             let caps = blockquote_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
-            let text  = regx("(?m)^ *> ?").replace_all(raw, "").to_string();
+            let text  = regx_helper(RegexHelper::BlockQuoteText).replace_all(raw, "").to_string();
 
             return Some(Token {
                 _type: "blockquote",
@@ -418,7 +429,7 @@ impl ITokenizer for Tokenizer {
 
     fn list(&mut self, src: &str) -> Option<Token> {
 
-        let mut list_caps = self.rules.block.exec_fc(src, MDBlock::List, None);
+        let list_caps = exec_block(src, MDBlock::List, &self.options, "");
         let mut _src: String = String::from(src);
 
 
@@ -542,7 +553,7 @@ impl ITokenizer for Tokenizer {
                     indent = 2;
                     item_contents = line.trim_start().to_string();
                 } else {
-                    indent = regx(r#"[^ ]"#)
+                    indent = regx_helper(RegexHelper::Indent)
                         .find(_cap2)
                         .unwrap()
                         .start();
@@ -553,7 +564,7 @@ impl ITokenizer for Tokenizer {
 
                 blank_line = false;
                 // Items begin with at most one blank line
-                if line == "" && regx(r#"^ *$"#)
+                if line == "" && regx_helper(RegexHelper::OneLine)
                     .is_match(next_line.as_ref())
                 {
                     raw = format!("{}{}\n", raw.to_string(), next_line);
@@ -577,7 +588,7 @@ impl ITokenizer for Tokenizer {
 
                         // Re-align to follow commonmark nesting rules
                         if self.options.pedantic {
-                            let re_align = fancy_regex::Regex::new(r#"^ {1,4}(?=( {4})*[^ ])"#).unwrap()
+                            let re_align = regx_helper_fc(RegexHelperFc::ReAlign)
                                 .replace_all(line.clone().as_str(), "  ")
                                 .to_string();
                             line = String::from(re_align);
@@ -588,12 +599,12 @@ impl ITokenizer for Tokenizer {
                             break;
                         }
 
-                        let line_search_match = regx(r#"[^ ]"#)
+                        let line_search_match = regx_helper(RegexHelper::LineSearch)
                             .find(line.as_str());
 
                         let line_search_idx = if line_search_match.is_some() {
                             line_search_match
-                            .unwrap().start() as i32
+                                .unwrap().start() as i32
                         } else {
                             -1
                         };
@@ -631,7 +642,7 @@ impl ITokenizer for Tokenizer {
                     // If the previous item ended with a blank line, the list is loose
                     if ends_with_blank_line {
                         list.loose = true
-                    } else if regx(r#"\n *\n *$"#).is_match(raw.as_str())
+                    } else if regx_helper(RegexHelper::EndWithBlankLine).is_match(raw.as_str())
                     {
                         ends_with_blank_line = true;
                     }
@@ -639,7 +650,7 @@ impl ITokenizer for Tokenizer {
 
                 // Check for task list items
                 if self.options.gfm {
-                    let is_task_caps = regx(r#"^\[[ xX]\] "#).captures(item_contents.as_str());
+                    let is_task_caps = regx_helper(RegexHelper::TaskItem).captures(item_contents.as_str());
                     if is_task_caps.is_some() {
                         is_task = true;
 
@@ -647,7 +658,7 @@ impl ITokenizer for Tokenizer {
                         let is_task0 = task_caps.get(0).map_or("", |m| m.as_str()).to_string();
 
                         is_checked = is_task0 != "[ ] ";
-                        item_contents = regx(r#"^\[[ xX]\] +"#)
+                        item_contents = regx_helper(RegexHelper::ListItemContents)
                             .replace(item_contents.as_str(), "")
                             .to_string()
                     } else {
@@ -705,18 +716,22 @@ impl ITokenizer for Tokenizer {
     }
 
     fn html(&mut self, src: &str) -> Option<Token> {
-        // let html_caps = self.rules.block.exec_fc(src, MDBlock::Html, None);
-        // println!("{:#?}", self.rules.inline.url);
 
-        let html_re_str =  self.rules.block.html.as_str();
-        let html_re = regress::Regex::with_flags(html_re_str, "i").unwrap();
-        let html_caps = html_re.find(src);
+        // let html_re_str =  self.rules.block.html.as_str();
+        // let html_re = regress::Regex::with_flags(html_re_str, "i").unwrap();
+        // let html_caps = html_re.find(src);
+
+        let html_caps = exec_block_regress(src, MDBlock::Html, &self.options, "");
+        // let html_caps = exec_block(src, MDBlock::Html, &self.options, "");
 
         if html_caps.is_some() {
             let caps = html_caps.unwrap();
 
             let raw = caps.group(0).map_or("", |r| { &src[r] });
             let cap_1 = caps.group(1).map_or("", |r| { &src[r] });
+
+            // let raw = caps.get(0).map_or("", |m| m.as_str());
+            // let cap_1 = caps.get(1).map_or("", |m| m.as_str());
 
             let pre = !self.options.sanitizer.is_some() &&
                 cap_1 == "pre" ||
@@ -764,7 +779,7 @@ impl ITokenizer for Tokenizer {
     }
 
     fn def(&mut self, src: &str) -> Option<Token> {
-        let def_caps = self.rules.block.exec_fc(src, MDBlock::Def, None);
+        let def_caps = exec_block(src, MDBlock::Def, &self.options, "");
 
         if def_caps.is_some() {
             let caps = def_caps.unwrap();
@@ -778,7 +793,7 @@ impl ITokenizer for Tokenizer {
             }
 
             let mut tag = cap1.to_lowercase();
-            tag = regx(r#"\s+"#).replace_all(tag.as_str(), " ").to_string();
+            tag = regx_helper(RegexHelper::Tag).replace_all(tag.as_str(), " ").to_string();
 
             return Some(Token {
                 _type: "def",
@@ -812,16 +827,22 @@ impl ITokenizer for Tokenizer {
 
     fn table(&mut self, src: &str, mut tokens: &mut Vec<InlineToken>) -> Option<Token> {
 
-        if  self.rules.block.table.is_empty() { return None; }
-
-        let table_caps = self.rules.block.exec_fc(src, MDBlock::Table, None);
+        let table_caps = exec_block_regress(src, MDBlock::Table, &self.options, "");
+        // let table_caps = exec_block(src, MDBlock::Table, &self.options, "");
 
         if table_caps.is_some() {
             let caps = table_caps.unwrap();
-            let raw = caps.get(0).map_or("", |m| m.as_str());
-            let cap1 = caps.get(1).map_or("", |m| m.as_str());
-            let cap2 = caps.get(2).map_or("", |m| m.as_str());
-            let cap3 = caps.get(3).map_or("", |m| m.as_str());
+
+            let raw = caps.group(0).map_or("", |r| { &src[r] });
+            let cap1 = caps.group(1).map_or("", |r| { &src[r] });
+            let cap2 = caps.group(2).map_or("", |r| { &src[r] });
+            let cap3 = caps.group(3).map_or("", |r| { &src[r] });
+
+
+            // let raw = caps.get(0).map_or("", |m| m.as_str());
+            // let cap1 = caps.get(1).map_or("", |m| m.as_str());
+            // let cap2 = caps.get(2).map_or("", |m| m.as_str());
+            // let cap3 = caps.get(3).map_or("", |m| m.as_str());
 
             let mut header = split_cells(cap1, None)
                 .into_iter()
@@ -856,16 +877,16 @@ impl ITokenizer for Tokenizer {
                 .collect::<Vec<Rc<RefCell<Token>>>>();
 
 
-            let align_replaced = regx(r#"^ *|\| *$"#)
+            let align_replaced = regx_helper(RegexHelper::AlignReplaced)
                 .replace_all(cap2, "").to_string();
 
-            let mut align: Vec<String> = regx(r#" *\| *"#)
+            let mut align: Vec<String> = regx_helper(RegexHelper::HeaderAlignment)
                 .split(align_replaced.as_str())
                 .map(|x| x.to_string())
                 .collect();
 
             let rows_= if cap3.trim() != "" {
-                regx(r#"\n[ \t]*$"#)
+                regx_helper(RegexHelper::TableRow)
                     .replace_all(cap3, "")
                     .split("\n")
                     .map(|x| x.to_string())
@@ -878,11 +899,11 @@ impl ITokenizer for Tokenizer {
 
                 let mut l = align.len();
                 for i in 0..l {
-                    if regx(r#"^ *-+: *$"#).is_match(align.get(i).unwrap().as_str()) {
+                    if regx_helper(RegexHelper::RightAlign).is_match(align.get(i).unwrap().as_str()) {
                         align[i] = "right".to_string();
-                    } else if regx(r#"^ *:-+: *$"#).is_match(align.get(i).unwrap().as_str()) {
+                    } else if regx_helper(RegexHelper::CenterAlign).is_match(align.get(i).unwrap().as_str()) {
                         align[i] = "center".to_string();
-                    } else if regx(r#"^ *:-+ *$"#).is_match(align.get(i).unwrap().as_str()){
+                    } else if regx_helper(RegexHelper::LeftAlign).is_match(align.get(i).unwrap().as_str()){
                         align[i] = "left".to_string();
                     } else {
                         align[i] = "".to_string();
@@ -975,7 +996,7 @@ impl ITokenizer for Tokenizer {
     }
 
     fn lheading(&mut self, src: &str) -> Option<Token> {
-        let lheading_caps = self.rules.block.exec_fc(src, MDBlock::LHeading, None);
+        let lheading_caps = exec_block(src, MDBlock::LHeading, &self.options, "");
 
         if lheading_caps.is_some() {
 
@@ -1023,7 +1044,8 @@ impl ITokenizer for Tokenizer {
     }
 
     fn paragraph(&mut self, src: &str) -> Option<Token> {
-        let paragraph_caps = self.rules.block.exec_fc(src, MDBlock::Paragraph, None);
+
+        let paragraph_caps = exec_block(src, MDBlock::Paragraph, &self.options, "");
 
         if paragraph_caps.is_some() {
             let caps = paragraph_caps.unwrap();
@@ -1070,7 +1092,8 @@ impl ITokenizer for Tokenizer {
     }
 
     fn text(&mut self, src: &str) -> Option<Token> {
-        let text_caps = self.rules.block.exec_fc(src, MDBlock::Text, None);
+
+        let text_caps = exec_block(src, MDBlock::Text, &self.options, "");
 
         if text_caps.is_some() {
             let caps = text_caps.unwrap();
@@ -1109,7 +1132,8 @@ impl ITokenizer for Tokenizer {
 
     // Inline
     fn escape(&mut self, src: &str) -> Option<Token> {
-        let escape_caps = self.rules.inline.exec_fc(src, MDInline::Escape, None);
+
+        let escape_caps = exec_inline(src, MDInline::Escape, &self.options, "");
 
         if escape_caps.is_some() {
             let caps = escape_caps.unwrap();
@@ -1148,21 +1172,23 @@ impl ITokenizer for Tokenizer {
     }
 
     fn tag(&mut self, src: &str, mut in_link: &mut bool, mut in_raw_block: &mut bool) -> Option<Token> {
-        let tag_caps = self.rules.inline.exec_fc(src, MDInline::Tag, None);
+
+        let tag_caps = exec_inline(src, MDInline::Tag, &self.options, "");
+
         if tag_caps.is_some() {
             let caps = tag_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
 
 
-            if !*in_link && regx(r#"(?i)^<a "#).is_match(raw) {
+            if !*in_link && regx_helper(RegexHelper::AnchorTagStart).is_match(raw) {
                 *in_link = true;
-            } else if *in_link && regx(r#"(?i)^<\\/a>"#).is_match(raw) {
+            } else if *in_link && regx_helper(RegexHelper::AnchorTagEnd).is_match(raw) {
                 *in_link = false;
             }
 
-            if !*in_raw_block && fancy_regex::Regex::new(r#"(?i)^<(pre|code|kbd|script)(\s|>)"#).unwrap().is_match(raw).unwrap() {
+            if !*in_raw_block && regx_helper_fc(RegexHelperFc::RawBlockStart).is_match(raw).unwrap() {
                 *in_raw_block = true;
-            } else if *in_raw_block && fancy_regex::Regex::new(r#"(?i)^<\/(pre|code|kbd|script)(\s|>)"#).unwrap().is_match(raw).unwrap() {
+            } else if *in_raw_block && regx_helper_fc(RegexHelperFc::RawBlockEnd).is_match(raw).unwrap() {
                 *in_raw_block = false;
             }
 
@@ -1213,7 +1239,7 @@ impl ITokenizer for Tokenizer {
 
     fn link(&mut self, src: &str) -> Option<Token> {
 
-        let link_caps = self.rules.inline.exec_fc(src, MDInline::Link, None);
+        let link_caps = exec_inline(src, MDInline::Link, &self.options, "");
 
         if link_caps.is_some() {
 
@@ -1224,9 +1250,9 @@ impl ITokenizer for Tokenizer {
             let mut cap3 = caps.get(3).map_or("", |m| m.as_str());
 
             let trimmed_url = cap2.trim();
-            if !self.options.pedantic && regx(r#"^<"#).is_match(trimmed_url) {
+            if !self.options.pedantic && regx_helper(RegexHelper::LinkStart).is_match(trimmed_url) {
                 // commonmark requires matching angle brackets
-                if !regx(r#">$"#).is_match(trimmed_url) {
+                if !regx_helper(RegexHelper::LinkEnd).is_match(trimmed_url) {
                     return None;
                 }
 
@@ -1266,8 +1292,7 @@ impl ITokenizer for Tokenizer {
             let mut _title = "";
             if self.options.pedantic {
                 // split pedantic href and title
-                let link_captures = fancy_regex::Regex::new(r#"^([^'"]*[^\s])\s+(['"])(.*)\2"#)
-                    .unwrap()
+                let link_captures = regx_helper_fc(RegexHelperFc::LinkCaptures)
                     .captures(_href)
                     .unwrap();
 
@@ -1279,43 +1304,43 @@ impl ITokenizer for Tokenizer {
                     _title = link3;
                 }
             } else {
-                    _title = if !cap3.is_empty() {
-                        &cap3[1..cap3.len()  - 1]
-                    } else {
-                        ""
-                    };
-                }
-                _href = _href.trim();
-
-                if regx(r#"^<"#).is_match(_href) {
-                    if self.options.pedantic && !(regx(r#">$"#).is_match(trimmed_url)) {
-                        _href = &_href[1..];
-                    } else {
-                        _href = &_href[1.._href.len() - 1];
-                    }
-                }
-
-                let href = if !_href.is_empty() {
-                    self.rules.inline.get_grammar_fc_regex(MDInline::Escapes, None)
-                        .replace_all(_href, "${1}")
-                        .to_string()
+                _title = if !cap3.is_empty() {
+                    &cap3[1..cap3.len()  - 1]
                 } else {
-                    _href.to_string()
+                    ""
                 };
+            }
+            _href = _href.trim();
 
-                let title = if !_title.is_empty() {
-                    self.rules.inline.get_grammar_fc_regex(MDInline::Escapes, None)
-                        .replace_all(_title, "${1}")
-                        .to_string()
+            if regx_helper(RegexHelper::LinkStart).is_match(_href) {
+                if self.options.pedantic && !regx_helper(RegexHelper::LinkEnd).is_match(trimmed_url) {
+                    _href = &_href[1..];
                 } else {
-                    _title.to_string()
-                };
+                    _href = &_href[1.._href.len() - 1];
+                }
+            }
 
-                let link = Link {
-                    href,
-                    title,
-                    tag: "".to_string()
-                };
+            let href = if !_href.is_empty() {
+                get_inline(MDInline::Escapes, &self.options, "")
+                    .replace_all(_href, "${1}")
+                    .to_string()
+            } else {
+                _href.to_string()
+            };
+
+            let title = if !_title.is_empty() {
+                get_inline(MDInline::Escapes, &self.options, "")
+                    .replace_all(_title, "${1}")
+                    .to_string()
+            } else {
+                _title.to_string()
+            };
+
+            let link = Link {
+                href,
+                title,
+                tag: "".to_string()
+            };
 
             let token = output_link(caps, link, raw.to_string());
             return Some(token);
@@ -1325,8 +1350,9 @@ impl ITokenizer for Tokenizer {
     }
 
     fn ref_link(&mut self, src: &str, mut links: &Vec<Link>) -> Option<Token> {
-        let ref_link_caps = self.rules.inline.exec_fc(src, MDInline::RefLink, None);
-        let no_link_caps = self.rules.inline.exec_fc(src, MDInline::NoLink, None);
+
+        let ref_link_caps = exec_inline(src, MDInline::RefLink, &self.options, "");
+        let no_link_caps = exec_inline(src, MDInline::NoLink, &self.options, "");
 
         if ref_link_caps.is_some() ||
             no_link_caps.is_some()
@@ -1342,9 +1368,9 @@ impl ITokenizer for Tokenizer {
             let cap2 = caps.get(2).map_or("", |m| m.as_str());
 
             let link = if cap2.len() > 0 {
-                regx(r#"\s+"#).replace_all(cap2, " ").to_string()
+                regx_helper(RegexHelper::Spaces).replace_all(cap2, " ").to_string()
             } else {
-                regx(r#"\s+"#).replace_all(cap1, " ").to_string()
+                regx_helper(RegexHelper::Spaces).replace_all(cap1, " ").to_string()
             };
 
             let link_idx = links.iter().position(|l| l.tag == link.to_lowercase());
@@ -1425,7 +1451,8 @@ impl ITokenizer for Tokenizer {
     }
 
     fn em_strong(&mut self, src: &str, masked_src: &str, prev_char: &str) -> Option<Token> {
-        let em_strong_caps = self.rules.inline.exec_fc(src, MDInline::EmStrong, Some("l_delim"));
+
+        let em_strong_caps = exec_inline(src, MDInline::EmStrong, &self.options, "l_delim");
         let mut _masked_src: String = String::from(masked_src);
 
         if em_strong_caps.is_none() { return None; }
@@ -1437,7 +1464,7 @@ impl ITokenizer for Tokenizer {
         let match3 = caps.get(3).map_or("", |m| m.as_str());
 
 
-        if regx(r#"[\p{L}\p{N}]"#).is_match(prev_char) &&
+        if regx_helper(RegexHelper::LetterNumber).is_match(prev_char) &&
             match3.len() > 0
         { return None; }
 
@@ -1450,7 +1477,8 @@ impl ITokenizer for Tokenizer {
             ""
         };
 
-        let punctuation_caps = self.rules.inline.exec_fc(prev_char, MDInline::Punctuation, None);
+        // self.rules.inline.exec_fc(prev_char, MDInline::Punctuation, None)
+        let punctuation_caps = exec_inline(prev_char, MDInline::Punctuation, &self.options, "");
 
         if next_char.is_empty() ||
             (next_char.len() > 0 &&
@@ -1466,10 +1494,12 @@ impl ITokenizer for Tokenizer {
             let mut r_delim = String::from("");
             let mut delim_total: i32 = l_length.clone() as i32;
 
-            let end_reg_str = if raw.chars().nth(0).unwrap() == '*' {
-                self.rules.inline.em_strong.r_delim_ast.clone()
+            let end_reg_regex = if raw.chars().nth(0).unwrap() == '*' {
+                get_inline(MDInline::EmStrong, &self.options, "r_delim_ast")
+                // self.rules.inline.em_strong.r_delim_ast.clone()
             } else {
-                self.rules.inline.em_strong.r_delim_und.clone()
+                get_inline(MDInline::EmStrong, &self.options, "r_delim_und")
+                // self.rules.inline.em_strong.r_delim_und.clone()
             };
 
             let src_len = src.chars().count();
@@ -1483,7 +1513,7 @@ impl ITokenizer for Tokenizer {
                 String::from(slice(_masked_src.as_str(), start_idx.._masked_src.chars().count()))
             };
 
-            let end_re = fancy_regex::Regex::new(end_reg_str.as_str()).unwrap();
+            let end_re = end_reg_regex;
 
             for captures_res in end_re.captures_iter(_masked_src.as_str())
             {
@@ -1631,16 +1661,19 @@ impl ITokenizer for Tokenizer {
     }
 
     fn code_span(&mut self, src: &str) -> Option<Token> {
-        let code_span_caps = self.rules.inline.exec_fc(src, MDInline::Code, None);
+
+        let code_span_caps = exec_inline(src, MDInline::Code, &self.options, "");
+
         if code_span_caps.is_some() {
             let caps = code_span_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
             let cap2 = caps.get(2).map_or("", |m| m.as_str());
 
-            let mut text = regx(r#"\n"#).replace_all(cap2, " ").to_string();
+            let mut text = regx_helper(RegexHelper::Newline).replace_all(cap2, " ").to_string();
 
-            let has_non_space_chars = regx(r#"[^ ]"#).is_match(text.as_str());
-            let has_space_chars_on_both_ends = regx(r#"^ "#).is_match(text.as_str()) && regx(r#" $"#).is_match(text.as_str());
+            let has_non_space_chars = regx_helper(RegexHelper::CodeNonSpaceChars).is_match(text.as_str());
+            let has_space_chars_on_both_ends = regx_helper(RegexHelper::CodeCharAtStart).is_match(text.as_str()) &&
+                regx_helper(RegexHelper::CodeCharAtEnd).is_match(text.as_str());
 
             if has_non_space_chars &&
                 has_space_chars_on_both_ends
@@ -1681,7 +1714,8 @@ impl ITokenizer for Tokenizer {
     }
 
     fn br(&mut self, src: &str) -> Option<Token> {
-        let br_caps = self.rules.inline.exec_fc(src, MDInline::Br, None);
+
+        let br_caps = exec_inline(src, MDInline::Br, &self.options, "");
 
         if br_caps.is_some() {
             let caps = br_caps.unwrap();
@@ -1720,9 +1754,8 @@ impl ITokenizer for Tokenizer {
     }
 
     fn del(&mut self, src: &str) -> Option<Token> {
-        if self.rules.inline.del.is_empty() { return None; }
 
-        let del_caps = self.rules.inline.exec_fc(src, MDInline::Del, None);
+        let del_caps = exec_inline(src, MDInline::Del, &self.options, "");
 
         if del_caps.is_some() &&
             self.rules.inline.del != ""
@@ -1764,7 +1797,9 @@ impl ITokenizer for Tokenizer {
     }
 
     fn autolink(&mut self, src: &str, mangle: fn(text: &str) -> String) -> Option<Token> {
-        let autolink_caps = self.rules.inline.exec_fc(src, MDInline::Autolink, None);
+
+        let autolink_caps = exec_inline(src, MDInline::Autolink, &self.options, "");
+
         if autolink_caps.is_some() {
             let caps = autolink_caps.unwrap();
             let raw = caps.get(0).map_or("", |m| m.as_str());
@@ -1845,23 +1880,22 @@ impl ITokenizer for Tokenizer {
     }
 
     fn url(&mut self, src: &str, mangle: fn(text: &str) -> String) -> Option<Token> {
-        if  self.rules.inline.url.is_empty() { return None; }
 
-        // let url_caps = self.rules.inline.exec_fc(src, MDInline::Url, None);
+        // let url_re_str =  self.rules.inline.url.as_str();
+        // let url_re = regress::Regex::with_flags(url_re_str, "i").unwrap();
+        // let url_caps = url_re.find(src);
 
-        let url_re_str =  self.rules.inline.url.as_str();
-        let url_re = regress::Regex::with_flags(url_re_str, "i").unwrap();
-        let url_caps = url_re.find(src);
+        let url_caps = exec_inline(src, MDInline::Url, &self.options, "");
 
         if url_caps.is_some() {
             let caps = url_caps.unwrap();
-            // let mut raw = caps.get(0).map_or("", |m| m.as_str());
-            // let cap1 = caps.get(1).map_or("", |m| m.as_str());
-            // let cap2 = caps.get(2).map_or("", |m| m.as_str());
-
-            let mut raw = caps.group(0).map_or("", |r| { &src[r] });
-            let cap1 = caps.group(1).map_or("", |r| { &src[r] });
-            let cap2 = caps.group(2).map_or("", |r| { &src[r] });
+            let mut raw = caps.get(0).map_or("", |m| m.as_str());
+            let cap1 = caps.get(1).map_or("", |m| m.as_str());
+            let cap2 = caps.get(2).map_or("", |m| m.as_str());
+            //
+            // let mut raw = caps.group(0).map_or("", |r| { &src[r] });
+            // let cap1 = caps.group(1).map_or("", |r| { &src[r] });
+            // let cap2 = caps.group(2).map_or("", |r| { &src[r] });
 
             let mut text = String::from("");
             let mut href = String::from("");
@@ -1954,7 +1988,8 @@ impl ITokenizer for Tokenizer {
     }
 
     fn inline_text(&mut self, src: &str, in_raw_block: bool, smartypants: fn(&str) -> String) -> Option<Token> {
-        let inline_caps = self.rules.inline.exec_fc(src, MDInline::Text, None);
+
+        let inline_caps = exec_inline(src, MDInline::Text, &self.options, "");
 
         if inline_caps.is_some() {
             let caps = inline_caps.unwrap();
@@ -1985,31 +2020,31 @@ impl ITokenizer for Tokenizer {
 
             let token =
                 Token {
-                _type: "text",
-                raw: raw.to_string(),
-                href: "".to_string(),
-                title: "".to_string(),
-                text,
-                tokens: vec![],
-                tag: "".to_string(),
-                ordered: false,
-                start: 0,
-                lang: "".to_string(),
-                loose: false,
-                items: vec![],
-                depth: 0,
-                escaped: false,
-                pre: false,
-                task: false,
-                checked: false,
-                in_link: false,
-                in_raw_block,
-                links: vec![],
-                align: vec![],
-                rows: vec![],
-                header: vec![],
-                code_block_style: "".to_string()
-            };
+                    _type: "text",
+                    raw: raw.to_string(),
+                    href: "".to_string(),
+                    title: "".to_string(),
+                    text,
+                    tokens: vec![],
+                    tag: "".to_string(),
+                    ordered: false,
+                    start: 0,
+                    lang: "".to_string(),
+                    loose: false,
+                    items: vec![],
+                    depth: 0,
+                    escaped: false,
+                    pre: false,
+                    task: false,
+                    checked: false,
+                    in_link: false,
+                    in_raw_block,
+                    links: vec![],
+                    align: vec![],
+                    rows: vec![],
+                    header: vec![],
+                    code_block_style: "".to_string()
+                };
 
             return Some(token);
         }
@@ -2029,7 +2064,7 @@ pub fn output_link(caps: Captures, link: Link, raw: String) -> Token {
         "".to_string()
     };
 
-    let text = regx(r#"\\([\[\]])"#).replace_all(cap1, "${1}");
+    let text = regx_helper(RegexHelper::OutputLinkText).replace_all(cap1, "${1}");
 
     if cap0.chars().nth(0).unwrap() != '!' {
         let token = Token {
@@ -2091,7 +2126,7 @@ pub fn output_link(caps: Captures, link: Link, raw: String) -> Token {
 
 pub fn indent_code_compensation(raw: &str, text: String) -> String {
 
-    let indent_to_code_caps = regx(r#"^(\s+)(?:```)"#).captures(raw);
+    let indent_to_code_caps = regx_helper(RegexHelper::IndentToCode).captures(raw);
 
     if indent_to_code_caps.is_none() {
         return text;
@@ -2104,7 +2139,7 @@ pub fn indent_code_compensation(raw: &str, text: String) -> String {
         .split("\n")
         .into_iter()
         .map(|node| {
-            let indent_in_node_caps = regx(r#"^\s+"#).captures(node);
+            let indent_in_node_caps = regx_helper(RegexHelper::IndentToNode).captures(node);
 
             if indent_in_node_caps.is_none() {
                 return node.to_string();

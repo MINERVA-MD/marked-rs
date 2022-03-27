@@ -13,6 +13,7 @@ pub mod renderer;
 pub mod tokenizer;
 pub mod extension;
 pub mod text_renderer;
+pub mod regex;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.

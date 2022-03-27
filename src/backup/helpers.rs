@@ -1,8 +1,11 @@
 // Helpers
 #![allow(warnings, unused)]
+use std::fs;
 use std::cmp::max;
+use std::io::Write;
 use std::fmt::format;
 use std::borrow::{Cow};
+use std::fs::OpenOptions;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use urlencoding::{encode, decode};
@@ -11,6 +14,7 @@ use serde::{Serialize, Deserialize};
 
 
 use crate::lexer::regx;
+use crate::regex::{RegexHelper, regx_helper};
 use crate::tokenizer::slice;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -120,8 +124,8 @@ pub fn unescape(html: &str) -> String {
 pub fn clean_url(sanitize: bool, base: &str, href: &str) -> Option<String> {
 
     let mut _href = String::from(href);
-    let non_word_and_colon_re = regx(r#"[^\w:]"#);
-    let origin_independent_url = regx(r#"(?i)^$|^[a-z][a-z0-9+.-]*:|^[?#]"#);
+    let non_word_and_colon_re = regx_helper(RegexHelper::NonWordColon);
+    let origin_independent_url = regx_helper(RegexHelper::OriginIndependent);
 
     if sanitize {
         let mut prot = "".to_string();
@@ -164,7 +168,7 @@ pub fn clean_url(sanitize: bool, base: &str, href: &str) -> Option<String> {
     let encoded_uri = encode_uri(_href.as_str());
 
     // TODO: Note that encodeURI throws error when trying to encode surrogate
-    _href = regx("%25")
+    _href = regx_helper(RegexHelper::EncodedPercent)
         .replace_all(encoded_uri.as_str(), "%")
         .to_string();
 
@@ -175,7 +179,7 @@ pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
 
     let row = get_row(table_row);
 
-    let mut cells: Vec<String> = regx(r#" \|"#).split(row.as_str())
+    let mut cells: Vec<String> = regx_helper(RegexHelper::TableCell).split(row.as_str())
         .map(|x| x.to_string())
         .collect();
 
@@ -204,7 +208,7 @@ pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
 
     for i in 0..cells.len() {
         // leading or trailing whitespace is ignored per the gfm spec
-        cells[i] = regx(r#"\\\|"#)
+        cells[i] = regx_helper(RegexHelper::TrailingWhitespace)
             .replace_all(cells[i].trim(), "|")
             .to_string();
     }
@@ -212,7 +216,7 @@ pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
 }
 
 pub fn get_row(a: &str) -> String {
-    let row = regex::Regex::new(r#"\|"#).unwrap()
+    let row = regx_helper(RegexHelper::Row)
         .replace_all(a, |cap: &regex::Captures| {
             let mut escaped = false;
             let mut curr: i32 = cap.get(0).unwrap().start() as i32;
@@ -245,9 +249,10 @@ pub fn resolve_url(base: &str, href: &str) -> String {
 
     let mut _base = String::from(base);
 
-    let protocol_re = regx(r#"^([^:]+:)[\s\S]*$"#);
-    let just_domain_re = regx(r#"^[^:]+:\\/*[^/]*$"#);
-    let domain_re = regx(r#"^([^:]+:\\/*[^/]*)[\s\S]*$"#);
+    let protocol_re = regx_helper(RegexHelper::Protocol);
+    let just_domain_re = regx_helper(RegexHelper::JustDomain);
+    let domain_re = regx_helper(RegexHelper::Domain);
+
 
     let mut base_url = String::from("");
     let just_domain_caps = just_domain_re.captures(_base.as_str());
@@ -258,10 +263,11 @@ pub fn resolve_url(base: &str, href: &str) -> String {
         base_url = rtrim(_base.as_str(), "/", true);
     }
 
-    _base = format!(" {}", base_url);
+    _base = format!("{}", base_url);
     let relative_base = _base.find(":");
 
-    return if slice(href, 0..2) == "//" {
+
+    return if slice(href, 0..2) == r#"//"# {
         if relative_base.is_none() {
             return String::from(href);
         }
@@ -273,11 +279,12 @@ pub fn resolve_url(base: &str, href: &str) -> String {
                 href
         )
     } else if href.chars().nth(0).is_some() &&
-        (href.chars().nth(0).unwrap().to_string() == "/")
+        (href.chars().nth(0).unwrap().to_string() == r#"/"#)
     {
         if relative_base.is_none() {
             return String::from(href);
         }
+
         let base_domain_replaced = domain_re
             .replace(_base.as_str(), "${1}")
             .to_string();

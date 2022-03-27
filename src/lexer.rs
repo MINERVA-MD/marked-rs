@@ -6,6 +6,7 @@ use std::cell::RefCell;
 
 use crate::helpers::repeat_string;
 use crate::defaults::{Options};
+use crate::regex::{RegexHelper, regx_helper};
 use crate::rules::{MDInline};
 use crate::token;
 use crate::tokenizer::{ITokenizer, Link, slice, Token, Tokenizer};
@@ -280,8 +281,8 @@ impl Lexer {
 impl ILexer for Lexer {
 
     fn lexify(&mut self, src: &str) {
-        let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
-        new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
+        let mut new_src = regx_helper(RegexHelper::LexerPreSpaces).replace_all(src, "\n").to_string();
+        new_src = regx_helper(RegexHelper::LexerPreTabs).replace_all(new_src.as_str(), "    ").to_string();
 
         let mut tokens = vec![];
         self.block_tokens(new_src.as_str(), &mut tokens);
@@ -293,14 +294,14 @@ impl ILexer for Lexer {
             self.inline_tokens(next.src.as_str(), i_tokens);
         }
 
-        // println!("Tokens: {:#?}", tokens);
+        // // println!("Tokens: {:#?}", tokens);
 
         self.tokens.append(&mut tokens);
     }
 
     fn lex<'a>(&mut self, src: &str) -> &mut Vec<Rc<RefCell<Token>>> {
-        let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
-        new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
+        let mut new_src = regx_helper(RegexHelper::LexerPreSpaces).replace_all(src, "\n").to_string();
+        new_src = regx_helper(RegexHelper::LexerPreTabs).replace_all(new_src.as_str(), "    ").to_string();
 
         let mut tokens = vec![];
         self.block_tokens(new_src.as_str(), &mut tokens);
@@ -312,7 +313,7 @@ impl ILexer for Lexer {
             self.inline_tokens(next.src.as_str(), i_tokens);
         }
 
-        // println!("Tokens: {:#?}", tokens);
+        // // println!("Tokens: {:#?}", tokens);
 
         self.tokens.append(&mut tokens);
         // self.tokens.clone()
@@ -320,8 +321,8 @@ impl ILexer for Lexer {
     }
 
     fn lex_ac<'a>(&mut self, src: &str) -> Vec<token::Token> {
-        let mut new_src = regx(r#"\r\n|\r"#).replace_all(src, "\n").to_string();
-        new_src = regx(r#"\t"#).replace_all(new_src.as_str(), "    ").to_string();
+        let mut new_src = regx_helper(RegexHelper::LexerPreSpaces).replace_all(src, "\n").to_string();
+        new_src = regx_helper(RegexHelper::LexerPreTabs).replace_all(new_src.as_str(), "    ").to_string();
         
         let mut tokens = vec![];
         self.block_tokens(new_src.as_str(), &mut tokens);
@@ -333,7 +334,7 @@ impl ILexer for Lexer {
             self.inline_tokens(next.src.as_str(), i_tokens);
         }
 
-        // println!("Tokens: {:#?}", tokens);
+        // // println!("Tokens: {:#?}", tokens);
 
         self.tokens.append(&mut tokens);
         self.capture_tokens()
@@ -359,7 +360,7 @@ impl ILexer for Lexer {
 
         let mut _src: String = String::from(src);
         if self.options.pedantic {
-            _src = regx(r#"(?m)^ +$"#).replace_all(_src.as_str(), "").to_string();
+            _src = regx_helper(RegexHelper::PedanticSpacing).replace_all(_src.as_str(), "").to_string();
         }
 
         let mut cut_src: String;
@@ -1240,15 +1241,15 @@ pub fn smartypants(text: &str) -> String {
         .replace("--", "\u{2013}");
 
     // opening singles
-    ret_text = regx(r#"(^|[-\u2014/(\[{"\s])'"#).replace_all(ret_text.as_str(), "${1}\u{2018}").to_string();
+    ret_text = regx_helper(RegexHelper::OpenSingles).replace_all(ret_text.as_str(), "${1}\u{2018}").to_string();
     // closing singles & apostrophes
     ret_text = ret_text.replace("'", "\u{2019}");
     // opening doubles
-    ret_text = regx(r#"(^|[-\u2014/(\[{\u2018\s])""#).replace_all(ret_text.as_str(), "${1}\u{201c}").to_string();
+    ret_text = regx_helper(RegexHelper::OpenDoubles).replace_all(ret_text.as_str(), "${1}\u{201c}").to_string();
     // closing doubles
     ret_text = ret_text.replace(r#"""#, "\u{201d}");
     // ellipses
-    ret_text = regx(r#"\.{3}"#).replace_all(ret_text.as_str(), "\u{2026}").to_string();
+    ret_text = regx_helper(RegexHelper::Ellipses).replace_all(ret_text.as_str(), "\u{2026}").to_string();
 
     ret_text
 }

@@ -48,6 +48,7 @@ impl Marked {
         }
 
         // TODO: Wrap this with error handling
+
         let mut lexer = Lexer::new(self.opt);
         let mut tokens = lexer.lex(src);
 

@@ -117,6 +117,7 @@ pub fn run_md_specs<'a>(title: &str, dir: &str, show_completion_table: bool) {
 
             let spec_should_fail = &spec.should_fail;
             let section = String::from(&spec.section.clone());
+
             let actual_html = marked.parse(md, Some(options), None);
 
             let mut spec_passed = *expected_html == actual_html && !*spec_should_fail;
@@ -169,6 +170,10 @@ fn html_entity_compare(str1: String, str2: String) -> bool {
     html_escape::decode_html_entities_to_string(str1, &mut str1_decoded);
     html_escape::decode_html_entities_to_string(str2, &mut str2_decoded);
 
+    // if str1_decoded != str2_decoded {
+    //     println!("{:#?}\n\n\n\n\n{:#?}", str1_decoded, str2_decoded)
+    // }
+
     pretty_assertions::assert_eq!(str1_decoded, str2_decoded);
     str1_decoded == str2_decoded
 }
@@ -212,7 +217,7 @@ mod specs {
     use super::*;
 
 
-    #[ignore]
+    #[test]
     fn run_cm_specs() {
         let options = get_base_options(false, false, false, false);
         run_specs("CommonMark", "tests/fixtures/marked-specs/commonmark", true, options);
@@ -224,13 +229,13 @@ mod specs {
         run_specs("GFM", "tests/fixtures/marked-specs/gfm", true, options);
     }
 
-    #[ignore]
+    #[test]
     #[timeout(600000)]
     fn run_og_specs() {
         run_md_specs("Original", "tests/fixtures/marked-specs/original/json", true);
     }
 
-    #[ignore]
+    #[test]
     #[timeout(600000)]
     fn run_new_specs() {
         run_md_specs("New", "tests/fixtures/marked-specs/new/json", true);

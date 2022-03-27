@@ -7718,7 +7718,6 @@ paragraph
         expect_tokens(md, options, &mut tokens, links);
     }
 
-
     #[test]
     #[timeout(8000)]
     fn check_cm_spec_example_152() {
@@ -10586,7 +10585,7 @@ paragraph
         expect_tokens(md, options, &mut tokens, links);
     }
 
-    #[test]
+    #[ignore]
     #[timeout(8000)]
     fn test_spec_summary_table() {
         let mut spec_summaries = vec![
@@ -10689,6 +10688,36 @@ paragraph
         expect_tokens(md, options, &mut tokens, links);
     }
 
+    #[ignore]
+    #[timeout(8000)]
+    fn check_new_example_57() {
+        let md = "<p><a href=\"test\">URL</a></p>\n<p><a href=\"test%5C\">URL</a></p>\n";
+
+        let mut options = get_default_options();
+        options.gfm = true;
+        options.pedantic = true;
+        options.header_ids = true;
+        options.mangle = true;
+        options.silent = true;
+
+        let mut marked = Marked::new(None);
+        let html = marked.parse(md, None, None);
+    }
+
+    #[test]
+    #[timeout(8000)]
+    fn check_new_example_58() {
+        let md = "  dash_capstyle: ['butt' | 'round' | 'projecting']\n  dash_joinstyle: ['miter' | 'round' | 'bevel']\n  dashes: sequence of on/off ink in points\n  drawstyle: ['default' | 'steps' | 'steps-pre' | 'steps-mid' | 'steps-post']\n  figure: a `~.Figure` instance\n  fillstyle: ['full' | 'left' | 'right' | 'bottom' | 'top' | 'none']\n  gid: an id string\n  label: object\n  linestyle or ls: ['solid' | 'dashed', 'dashdot', 'dotted' | (offset, on-off-dash-seq) | ``'-'`` | ``'--'`` | ``'-.'`` | ``':'`` | ``'None'`` | ``' '`` | ``''``]\n  linewidth or lw: float value in points\n  marker: :mod:`A valid marker style <matplotlib.markers>`\n  markeredgecolor or mec: any matplotlib color\n  markeredgewidth or mew: float value in points\n  markerfacecolor or mfc: any matplotlib color\n  markerfacecoloralt or mfcalt: any matplotlib color\n  markersize or ms: float\n  markevery: [None | int | length-2 tuple of int | slice | list/array of int | float | length-2 tuple of float]\n  path_effects: `~.AbstractPathEffect`\n  picker: float distance in points or callable pick function ``fn(artist, event)``\n  pickradius: float distance in points\n  rasterized: bool or None\n  sketch_params: (scale: float, length: float, randomness: float)\n  snap: bool or None\n  solid_capstyle: ['butt' | 'round' |  'projecting']\n  solid_joinstyle: ['miter' | 'round' | 'bevel']\n  transform: a :class:`matplotlib.transforms.Transform` instance\n  url: a url string\n  visible: bool\n  xdata: 1D array\n  ydata: 1D array\n  zorder: float\n";
+
+        let mut options = get_default_options();
+        options.gfm = true;
+        options.header_ids = true;
+        options.mangle = true;
+        options.silent = true;
+
+        let mut marked = Marked::new(Some(options));
+        let html = marked.parse(md, None, None);
+    }
 
     #[ignore]
     #[timeout(8000)]

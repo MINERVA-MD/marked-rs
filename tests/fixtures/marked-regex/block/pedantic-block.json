@@ -8,7 +8,7 @@
   "list": "^( {0,3}(?:[*+-]|\\d{1,9}[.)]))( [^\\n]+?)?(?:\\n|$)",
   "html": "^ *(?:<!--(?!-?>)[\\s\\S]*?(?:-->|$) *(?:\\n|\\s*$)|<((?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\\b)\\w+(?!:|[^\\w\\s@]*@)\\b)[\\s\\S]+?<\\/\\1> *(?:\\n{2,}|\\s*$)|<(?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\\b)\\w+(?!:|[^\\w\\s@]*@)\\b(?:\"[^\"]*\"|'[^']*'|\\s[^'\"/>\\s]*)*?\\/?> *(?:\\n{2,}|\\s*$))",
   "def": "^ *\\[([^\\]]+)\\]: *<?([^\\s>]+)>?(?: +([\"(][^\\n]+[\")]))? *(?:\\n+|$)",
-  "table": "",
+  "table": "a^",
   "l_heading": "^([^\\n]+)\\n {0,3}(=+|-+) *(?:\\n+|$)",
   "paragraph": "^([^\\n]+(?:\\n(?! {0,3}((?:- *){3,}|(?:_ *){3,}|(?:\\* *){3,})(?:\\n+|$)| *#{1,6} *[^\\n]|([^\\n]+)\\n {0,3}(=+|-+) *(?:\\n+|$)| {0,3}>|table| +\\n)[^\\n]+)*)",
   "text": "^[^\\n]+",

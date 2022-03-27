@@ -14,6 +14,7 @@ use serde::{Serialize, Deserialize};
 
 
 use crate::lexer::regx;
+use crate::regex::{RegexHelper, regx_helper};
 use crate::tokenizer::slice;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -123,8 +124,8 @@ pub fn unescape(html: &str) -> String {
 pub fn clean_url(sanitize: bool, base: &str, href: &str) -> Option<String> {
 
     let mut _href = String::from(href);
-    let non_word_and_colon_re = regx(r#"[^\w:]"#);
-    let origin_independent_url = regx(r#"(?i)^$|^[a-z][a-z0-9+.-]*:|^[?#]"#);
+    let non_word_and_colon_re = regx_helper(RegexHelper::NonWordColon);
+    let origin_independent_url = regx_helper(RegexHelper::OriginIndependent);
 
     if sanitize {
         let mut prot = "".to_string();
@@ -167,7 +168,7 @@ pub fn clean_url(sanitize: bool, base: &str, href: &str) -> Option<String> {
     let encoded_uri = encode_uri(_href.as_str());
 
     // TODO: Note that encodeURI throws error when trying to encode surrogate
-    _href = regx("%25")
+    _href = regx_helper(RegexHelper::EncodedPercent)
         .replace_all(encoded_uri.as_str(), "%")
         .to_string();
 
@@ -178,7 +179,7 @@ pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
 
     let row = get_row(table_row);
 
-    let mut cells: Vec<String> = regx(r#" \|"#).split(row.as_str())
+    let mut cells: Vec<String> = regx_helper(RegexHelper::TableCell).split(row.as_str())
         .map(|x| x.to_string())
         .collect();
 
@@ -207,7 +208,7 @@ pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
 
     for i in 0..cells.len() {
         // leading or trailing whitespace is ignored per the gfm spec
-        cells[i] = regx(r#"\\\|"#)
+        cells[i] = regx_helper(RegexHelper::TrailingWhitespace)
             .replace_all(cells[i].trim(), "|")
             .to_string();
     }
@@ -215,7 +216,7 @@ pub fn split_cells(table_row: &str, count: Option<usize>) -> Vec<String> {
 }
 
 pub fn get_row(a: &str) -> String {
-    let row = regex::Regex::new(r#"\|"#).unwrap()
+    let row = regx_helper(RegexHelper::Row)
         .replace_all(a, |cap: &regex::Captures| {
             let mut escaped = false;
             let mut curr: i32 = cap.get(0).unwrap().start() as i32;
@@ -248,13 +249,9 @@ pub fn resolve_url(base: &str, href: &str) -> String {
 
     let mut _base = String::from(base);
 
-    let protocol_str = "^([^:]+:)[\\s\\S]*$";
-    let just_domain_str = "^[^:]+:/*[^/]*$";
-    let domain_str = "^([^:]+:/*[^/]*)[\\s\\S]*$";
-
-    let protocol_re = regx(protocol_str);
-    let just_domain_re = regx(just_domain_str);
-    let domain_re = regx(domain_str);
+    let protocol_re = regx_helper(RegexHelper::Protocol);
+    let just_domain_re = regx_helper(RegexHelper::JustDomain);
+    let domain_re = regx_helper(RegexHelper::Domain);
 
 
     let mut base_url = String::from("");

@@ -1,6 +1,7 @@
 #![allow(warnings, unused)]
 use crate::lexer::regx;
 use std::collections::HashMap;
+use crate::regex::{RegexHelper, regx_helper};
 
 #[derive(Clone)]
 pub struct Slugger {
@@ -16,9 +17,9 @@ impl Slugger {
 
     pub fn serialize(value: &str) -> String {
         // TODO: Not sure about how these regexes are escaped; double check regex docs
-        let html_re = regx("(?i)<[!\\\\/a-z].*?>");
-        let chars_re = regx(r#"[\u2000-\u206F\u2E00-\u2E7F\\'!\\"\\#$%&()*+,./:;<=>?@\[\]^`\{|\}~]"#);
-        let space_re = regx(r#"\s"#);
+        let html_re = regx_helper(RegexHelper::SerializeHtml);
+        let chars_re = regx_helper(RegexHelper::SerializeChars);
+        let space_re = regx_helper(RegexHelper::SerializeSpaces);
 
         let mut serialized_str= value.to_lowercase().trim().to_string();
 

@@ -3,6 +3,7 @@ use crate::lexer::regx;
 use crate::slugger::Slugger;
 use crate::defaults::Options;
 use crate::helpers::{clean_url, escape};
+use crate::regex::{RegexHelper, regx_helper};
 
 // #[derive(Clone)]
 pub struct Renderer {
@@ -60,7 +61,7 @@ impl IRenderer for Renderer {
     fn code(&mut self, mut code: &str, info_str: &str, mut escaped: bool) -> String {
 
         let mut _code = String::from(code);
-        let lang_caps = regx("\\S*").captures(info_str).unwrap();
+        let lang_caps = regx_helper(RegexHelper::CodeSpaces).captures(info_str).unwrap();
         let lang = lang_caps.get(0).map_or("", |m| m.as_str());
 
         if self.options.is_highlight {
@@ -71,7 +72,7 @@ impl IRenderer for Renderer {
             }
         }
 
-        _code = regx("\n$").replace_all(_code.as_str(), "").to_string();
+        _code = regx_helper(RegexHelper::EndWithNewline).replace_all(_code.as_str(), "").to_string();
         _code = format!("{}\n", _code);
 
 
