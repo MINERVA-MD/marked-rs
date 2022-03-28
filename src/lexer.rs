@@ -810,7 +810,6 @@ impl ILexer for Lexer {
                 } else {
                     tokens.push(_token);
                 }
-                // // println!("Text Token After: {:#?}", _token.clone());
                 continue;
             }
 
@@ -1162,8 +1161,7 @@ impl ILexer for Lexer {
                 // println!("Entered Inline Text");
                 let inline_text_token = Rc::new(RefCell::new(token.unwrap()));
                 let idx = inline_text_token.as_ref().borrow().raw.len();
-
-                // // println!("Inline Text Token: {:#?}", inline_text_token);
+                
 
                 _src = String::from(&_src[idx..]);
 

@@ -10731,11 +10731,15 @@ paragraph
         expect_tokens(md, options, &mut tokens, links);
     }
 
-    #[ignore]
+    #[test]
     #[timeout(80000)]
     fn check_md_file() {
         let mut marked = Marked::new(None);
         let md = fs::read_to_string("tests/fixtures/md/spec.md").expect("Unable to read file");
+        let md_sm = fs::read_to_string("tests/fixtures/md/spec-sm.md").expect("Unable to read file");
+        let md_lg = fs::read_to_string("tests/fixtures/md/spec-lg.md").expect("Unable to read file");
+
+
         let html = marked.parse(md.as_str(), None, None);
 
         let spec_path = "tests/fixtures/md/spec.html";
@@ -10754,5 +10758,6 @@ paragraph
             eprintln!("Couldn't write to file: {}", e);
         }
     }
+
 }
 

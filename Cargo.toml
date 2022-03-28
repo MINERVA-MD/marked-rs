@@ -9,6 +9,7 @@ edition = "2021"
 [lib]
 crate-type = ["lib", "cdylib"]
 
+
 [features]
 default = ["console_error_panic_hook", "wee_alloc"]
 profile-with-puffin = ["profiling/profile-with-puffin"]
@@ -31,7 +32,7 @@ opt-level = 1
 #codegen-units = 1
 
 [profile.release]
-#debug = true
+debug = true
 lto = "fat"
 opt-level = 3
 panic = "abort"
@@ -42,13 +43,10 @@ url = "2.2.2"
 rand = "0.8.5"
 regex = "1.5.4"
 ntest = "0.7.5"
-tabled = "0.5.0"
 chrono = "0.4.19"
 regress = "0.4.1"
-kuchiki = "0.8.1"
 seq-macro = "0.3"
-comrak = "0.12.1"
-scraper = "0.12.0"
+#comrak = "0.12.1"
 gnuplot = "0.0.37"
 profiling = "1.0.5"
 test-case = "1.2.1"

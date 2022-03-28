@@ -248,8 +248,6 @@ impl ITokenizer for Tokenizer {
 
     fn fences(&mut self, src: &str) -> Option<Token> {
 
-        // if  self.rules.block.fences.is_empty()  { return None; }
-
         let fences_caps = exec_block(src, MDBlock::Fences, &self.options, "");
 
         if fences_caps.is_some() {
